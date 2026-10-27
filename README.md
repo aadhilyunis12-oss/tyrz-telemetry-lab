@@ -1,6 +1,6 @@
-# 🏎 TYRZ Lab — Ferrari F40 AI Telemetry & Tyre Scanner
+# 🏎 TYRZ Lab —  AI Telemetry & Tyre Scanner
 
-A Ferrari F40 themed AI-powered tyre telemetry and vehicle inspection platform.
+A   AI-powered tyre telemetry and vehicle inspection platform.
 Built with **Node.js + Express** (backend) and **vanilla HTML/CSS/JS** (frontend).
 
 ---
@@ -8,7 +8,7 @@ Built with **Node.js + Express** (backend) and **vanilla HTML/CSS/JS** (frontend
 ## 📋 Project Architecture
 
 ```
-ferrari-f40-telemetry/
+AI-powered tyre-telemetry/
 ├── backend/                   ← Express + JWT auth API (port 5000)
 │   ├── server.js              ← Main Express server
 │   ├── .env                   ← Environment variables (never commit this)
