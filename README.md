@@ -3,6 +3,9 @@
 A   AI-powered tyre telemetry and vehicle inspection platform.
 Built with **Node.js + Express** (backend) and **vanilla HTML/CSS/JS** (frontend).
 
+> 🌐 **Live Production Demo:** **[https://tyrz-telemetry-lab.onrender.com](https://tyrz-telemetry-lab.onrender.com)**  
+> 📦 **GitHub Repository:** **[https://github.com/aadhilyunis12-oss/tyrz-telemetry-lab](https://github.com/aadhilyunis12-oss/tyrz-telemetry-lab)**
+
 ---
 
 ## 📋 Project Architecture
