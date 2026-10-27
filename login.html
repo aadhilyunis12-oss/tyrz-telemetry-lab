@@ -290,7 +290,7 @@
 
       try {
         // Send as both fields — backend accepts email OR username
-        const response = await fetch("http://localhost:5000/api/auth/login", {
+        const response = await fetch("/api/auth/login", {
           method:      "POST",
           headers:     { "Content-Type": "application/json" },
           credentials: "include",   // required for the JWT cookie to be saved
@@ -323,7 +323,7 @@
       } catch (error) {
         console.error(error);
         alertBox.className   = "alert-msg error";
-        alertBox.textContent = "❌ Unable to connect to backend (http://localhost:5000)";
+        alertBox.textContent = "❌ Unable to connect to backend server";
         alertBox.style.display = "block";
         loginBtn.disabled    = false;
         loginBtn.textContent = "Login ➔";

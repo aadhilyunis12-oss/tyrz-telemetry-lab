@@ -107,16 +107,17 @@ This runs on port **5000** by default (configurable via `backend/.env` → `PORT
 
 ---
 
-## 🌐 Correct Browser URLs
+## 🌐 Live Web Application URLs
 
-| Page | URL |
+| Page | Live Production URL |
 |---|---|
-| **Login** | http://localhost:5000/login.html |
-| **Register** | http://localhost:5000/register.html |
-| **Dashboard** | http://localhost:5000/landing.html |
-| **API Health** | http://localhost:5000/api/health |
+| 🏁 **Home / Splash** | https://tyrz-telemetry-lab.onrender.com/ |
+| 🏎️ **Login** | https://tyrz-telemetry-lab.onrender.com/login.html |
+| 📝 **Register** | https://tyrz-telemetry-lab.onrender.com/register.html |
+| 📊 **Dashboard** | https://tyrz-telemetry-lab.onrender.com/landing.html |
+| 🩺 **API Health** | https://tyrz-telemetry-lab.onrender.com/api/health |
 
-> **Note:** Port `8080` is **not used** by this project. The backend always runs on **port 5000**.
+> *(For local offline development on your computer, you can run `start.bat` on `http://localhost:5000`)*.
 
 ---
 

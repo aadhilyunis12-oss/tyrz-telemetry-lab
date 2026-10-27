@@ -246,7 +246,7 @@
       regBtn.textContent     = "CREATING ACCOUNT...";
 
       try {
-        const response = await fetch("http://localhost:5000/api/auth/register", {
+        const response = await fetch("/api/auth/register", {
           method:      "POST",
           headers:     { "Content-Type": "application/json" },
           credentials: "include",
@@ -270,7 +270,7 @@
       } catch (error) {
         console.error(error);
         alertBox.className   = "alert-msg error";
-        alertBox.textContent = "❌ Unable to connect to backend (http://localhost:5000)";
+        alertBox.textContent = "❌ Unable to connect to backend server";
         alertBox.style.display = "block";
         regBtn.disabled    = false;
         regBtn.textContent = "Create Account ➔";
