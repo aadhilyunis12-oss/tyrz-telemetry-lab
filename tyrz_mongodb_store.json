@@ -1,0 +1,120 @@
+{
+  "users": [
+    {
+      "_id": "usr_pilot_f40",
+      "username": "pilot@f40.it",
+      "email": "pilot@f40.it",
+      "passwordHash": "$2a$10$mw3tcs.c7dnIJ9wrFKRBC.tPKNipejaMoFrTs0tMzqqcbnoV7J0dC",
+      "name": "Scuderia Pilot 01",
+      "fullName": "Scuderia Pilot 01",
+      "vehicle": "Ferrari F40 (1987)",
+      "authProvider": "local",
+      "avatarUrl": "tyrz_logo_red.jpg",
+      "createdAt": "2026-10-26T14:37:50.017Z",
+      "lastLogin": "2026-10-26T14:37:50.017Z"
+    },
+    {
+      "_id": "usr_aadhil",
+      "username": "aadhil",
+      "email": "aadhil@gmail.com",
+      "passwordHash": "$2a$10$//5SJx9O1dw0vlQkH0jug.O6CQZsG4sBSrKV4PCb0dj/S0nmejHHe",
+      "name": "Aadhil",
+      "fullName": "Aadhil",
+      "vehicle": "Ferrari F40 Telemetry",
+      "authProvider": "local",
+      "avatarUrl": "tyrz_logo_red.jpg",
+      "createdAt": "2026-10-26T14:37:50.122Z",
+      "lastLogin": "2026-10-26T14:37:50.122Z"
+    },
+    {
+      "_id": "usr_1793028476488",
+      "name": "aadhilyunis",
+      "fullName": "aadhilyunis",
+      "username": "aadhilyunis",
+      "email": "aadhilyunis12@gmail.com",
+      "passwordHash": "$2a$10$Kz0sQpqg09N1d/UATT9r7.lg/wJwXYdcfwQVYA3sDZxxQLpPD3Kyq",
+      "passcode": "$2a$10$Kz0sQpqg09N1d/UATT9r7.lg/wJwXYdcfwQVYA3sDZxxQLpPD3Kyq",
+      "vehicle": "Ferrari F40",
+      "authProvider": "local",
+      "avatarUrl": "tyrz_logo_red.jpg",
+      "createdAt": "2026-10-26T15:27:56.488Z",
+      "lastLogin": "2026-10-26T16:58:28.660Z"
+    }
+  ],
+  "scans": [
+    {
+      "_id": "scan_1793030375719",
+      "userId": "usr_1793028476488",
+      "username": "aadhilyunis",
+      "userEmail": "aadhilyunis12@gmail.com",
+      "treadDepthMm": 3.3,
+      "remainingKm": 6571,
+      "safe": true,
+      "thresholdMm": 1,
+      "condition": "🟢 Good",
+      "confidence": 0.92,
+      "metadata": {
+        "tireMake": "MRF Zapper",
+        "tireSize": "90/90-17",
+        "position": "R",
+        "vehicleType": "Motorcycle / Scooter / Superbike",
+        "vehicleModel": "Bajaj Pulsar 150",
+        "odometerKm": 28500,
+        "recommendedPsi": "33 – 42 PSI",
+        "calibrationRefMm": null,
+        "calibrationFactor": "0.00",
+        "userEmail": "aadhilyunis12@gmail.com",
+        "username": "aadhilyunis",
+        "userId": "usr_1793028476488"
+      },
+      "timestamp": "2026-10-26T15:59:35.719Z"
+    },
+    {
+      "_id": "scan_1793028662156",
+      "userId": "usr_1793028476488",
+      "username": "aadhilyunis",
+      "userEmail": "aadhilyunis12@gmail.com",
+      "treadDepthMm": 3.3,
+      "remainingKm": 6571,
+      "safe": true,
+      "thresholdMm": 1,
+      "condition": "🟢 Good",
+      "confidence": 0.92,
+      "metadata": {
+        "tireMake": "MRF Zapper",
+        "tireSize": "90/90-17",
+        "position": "R",
+        "vehicleType": "Motorcycle / Scooter / Superbike",
+        "vehicleModel": "Bajaj Pulsar 150",
+        "odometerKm": 28500,
+        "recommendedPsi": "33 – 42 PSI",
+        "calibrationRefMm": 24.26,
+        "calibrationFactor": "0.14",
+        "userEmail": "aadhilyunis12@gmail.com",
+        "username": "aadhilyunis",
+        "userId": "usr_1793028476488"
+      },
+      "timestamp": "2026-10-26T15:31:02.156Z"
+    }
+  ],
+  "inspections": [],
+  "notifications": [
+    {
+      "_id": "notif_init",
+      "username": "all",
+      "title": "MongoDB Backend Synchronized",
+      "message": "Tyrz Lab MongoDB REST backend active and connected to front-end telemetry.",
+      "level": "info",
+      "createdAt": "2026-10-26T14:37:50.122Z"
+    }
+  ],
+  "chassis": {
+    "R": {
+      "position": "R",
+      "treadDepthMm": 3.3,
+      "kmToFlat": 6571,
+      "healthScore": 38,
+      "risk": "safe"
+    }
+  }
+}

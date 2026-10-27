@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Login — Ferrari F40 Telemetry & AI Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #040507;
+      --card-bg: rgba(10, 12, 16, 0.92);
+      --accent: #e60000;
+      --accent-glow: rgba(230, 0, 0, 0.45);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f6fa;
+      --text-dim: #9aa1b2;
+      --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 100vw;
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(230, 0, 0, 0.18) 0%, transparent 65%),
+        radial-gradient(circle at 90% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+      opacity: 0;
+      animation: bodyFadeIn 0.6s ease 0.05s forwards;
+    }
+
+    /* ── Entrance Animations ───────────────────────────── */
+    @keyframes bodyFadeIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes cardRise {
+      from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.96);
+        filter: blur(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes itemReveal {
+      from {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes accentDraw {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border: 1px solid rgba(230, 0, 0, 0.4);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(230, 0, 0, 0.15);
+      opacity: 0;
+      animation: cardRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    }
+
+    /* Each child element animates in with staggered delay via --i */
+    .anim-in {
+      opacity: 0;
+      animation: itemReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: calc(0.55s + var(--i, 0) * 0.12s);
+    }
+
+    /* Red accent underline on h1 */
+    h1::after {
+      content: '';
+      display: block;
+      height: 3px;
+      width: 48px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin-top: 6px;
+      transform-origin: left;
+      transform: scaleX(0);
+      animation: accentDraw 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.1s forwards;
+    }
+
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--accent-glow);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #ff1a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px var(--accent-glow);
+    }
+
+    .bottom-link {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .bottom-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .bottom-link a:hover {
+      text-decoration: underline;
+    }
+
+    .alert-msg {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      display: none;
+    }
+
+    .alert-msg.error {
+      background: rgba(255, 23, 68, 0.15);
+      border: 1px solid #ff1744;
+      color: #ff1744;
+    }
+
+    .alert-msg.success {
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid #00e676;
+      color: #00e676;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="brand-tag">TYRZ // AI TELEMETRY</div>
+    <h1>Login</h1>
+    <p class="subtitle">Enter your pilot credentials to access telemetry dashboard.</p>
+
+    <div class="form-group">
+      <label for="username">USERNAME</label>
+      <input type="text" id="username" placeholder="Username" autocomplete="username">
+    </div>
+
+    <div class="form-group">
+      <label for="password">PASSWORD</label>
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    </div>
+
+    <button class="btn-submit" id="login-btn" onclick="login()">Login ➔</button>
+
+    <div id="alert-box" class="alert-msg error"></div>
+
+    <p class="bottom-link">
+      Don't have an account?
+      <a href="register.html">Create Account</a>
+    </p>
+  </div>
+
+  <script>
+    /* ── Stagger-animate every direct child of .auth-card ── */
+    document.addEventListener('DOMContentLoaded', function() {
+      var card = document.querySelector('.auth-card');
+      if (!card) return;
+      var children = card.children;
+      var idx = 0;
+      for (var i = 0; i < children.length; i++) {
+        var el = children[i];
+        // skip the hidden alert box
+        if (el.id === 'alert-box') continue;
+        el.classList.add('anim-in');
+        el.style.setProperty('--i', idx);
+        idx++;
+      }
+    });
+
+    async function login() {
+      const identifier = document.getElementById("username").value.trim();
+      const password   = document.getElementById("password").value;
+      const alertBox   = document.getElementById("alert-box");
+      const loginBtn   = document.getElementById("login-btn");
+
+      if (!identifier || !password) {
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Please enter your username/email and password.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      alertBox.style.display = "none";
+      loginBtn.disabled      = true;
+      loginBtn.textContent   = "AUTHENTICATING...";
+
+      try {
+        // Send as both fields — backend accepts email OR username
+        const response = await fetch("http://localhost:5000/api/auth/login", {
+          method:      "POST",
+          headers:     { "Content-Type": "application/json" },
+          credentials: "include",   // required for the JWT cookie to be saved
+          body: JSON.stringify({
+            email:    identifier,
+            username: identifier,
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alertBox.className   = "alert-msg success";
+          alertBox.textContent = "✓ Login successful! Redirecting...";
+          alertBox.style.display = "block";
+
+          // Persist user in localStorage for the landing page to read
+          localStorage.setItem("user",             JSON.stringify(data.user));
+          localStorage.setItem("tyrz_active_user", JSON.stringify(data.user));
+
+          setTimeout(() => { window.location.href = "landing.html"; }, 1000);
+        } else {
+          alertBox.className   = "alert-msg error";
+          alertBox.textContent = "❌ " + (data.message || "Login failed");
+          alertBox.style.display = "block";
+          loginBtn.disabled    = false;
+          loginBtn.textContent = "Login ➔";
+        }
+      } catch (error) {
+        console.error(error);
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Unable to connect to backend (http://localhost:5000)";
+        alertBox.style.display = "block";
+        loginBtn.disabled    = false;
+        loginBtn.textContent = "Login ➔";
+      }
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
+    });
+  </script>
+
+</body>
+</html>

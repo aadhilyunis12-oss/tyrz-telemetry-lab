@@ -1,0 +1,24 @@
+{
+  "name": "tyrz-f40-ai-scanner",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "server": "node server-mongodb.js",
+    "serve": "node server-mongodb.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node server-mongodb.js",
+    "next:start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "mongodb": "^6.9.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47"
+  }
+}

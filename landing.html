@@ -1,0 +1,3562 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="red">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AI Tyre Health Scanner — Ferrari F40 Telemetry & Tread Diagnostics</title>
+  <!-- Guard: The Vehicle Overview / Tyre Monitor only appears after the user provides input.
+       Auto-purges any leftover demo/cached data so the monitor never appears automatically on fresh visits. -->
+  <script>
+    (function guardTyreData() {
+      try {
+        if (!localStorage.getItem('tyrz_user_scan_count')) {
+          localStorage.removeItem('tyrz_vehicle_tyres');
+          localStorage.removeItem('tyrz_has_real_scans');
+        } else {
+          // If stored tyre data contains the auto-generated fake Front Wheel (4.5mm Pirelli Diablo Rosso IV), purge that position
+          var raw = localStorage.getItem('tyrz_vehicle_tyres');
+          if (raw) {
+            var tyres = JSON.parse(raw);
+            if (tyres && tyres.F && (tyres.F.brand === 'Pirelli Diablo Rosso IV' || parseFloat(tyres.F.depth) === 4.5)) {
+              delete tyres.F;
+              localStorage.setItem('tyrz_vehicle_tyres', JSON.stringify(tyres));
+            }
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #060408;
+      --bg-card: rgba(12, 8, 10, 0.88);
+      --bg-card-hover: rgba(22, 10, 14, 0.97);
+      --bg-elevated: rgba(20, 10, 14, 0.80);
+      --f40-red: #e60000;
+      --f40-red-deep: #8b0000;
+      --f40-red-glow: rgba(230, 0, 0, 0.55);
+      --f40-red-glow-soft: rgba(230, 0, 0, 0.18);
+      --accent: #e60000;
+      --accent-glow: rgba(230, 0, 0, 0.55);
+      --accent-soft: rgba(230, 0, 0, 0.14);
+      --accent-solid: #ff1a1a;
+      --border: rgba(180, 30, 30, 0.22);
+      --border-strong: rgba(230, 0, 0, 0.45);
+      --border-focus: rgba(230, 0, 0, 0.9);
+      --border-hover: rgba(255, 80, 80, 0.35);
+      --text: #f8f0f0;
+      --text-dim: #b09a9a;
+      --text-muted: #6b4a4a;
+      --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --success: #00e676;
+      --warning: #ffab00;
+      --danger: #ff1744;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 26px;
+    }
+
+
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FERRARI F40 RED THEME — GLOBAL BACKGROUND CANVAS
+    ══════════════════════════════════════════════════════════════════════ */
+    body {
+      width: 100%;
+      min-height: 100vh;
+      background: #060408;
+      font-family: var(--font-sans);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.5;
+      position: relative;
+    }
+
+    /* Carbon-fiber grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(180, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180, 0, 0, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Ambient red glow orbs - Ferrari F40 racing atmosphere */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 45% at 15% 0%, rgba(230, 0, 0, 0.22) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 100%, rgba(180, 0, 0, 0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 35% 60% at 50% 50%, rgba(100, 0, 0, 0.08) 0%, transparent 80%),
+        linear-gradient(180deg, #060408 0%, #0a0406 50%, #060408 100%);
+      pointer-events: none;
+    }
+
+    /* Scrolling animated red aurora */
+    @keyframes redAurora {
+      0%   { opacity: 0.6; transform: scale(1) translateX(0); }
+      50%  { opacity: 1;   transform: scale(1.12) translateX(30px); }
+      100% { opacity: 0.6; transform: scale(1) translateX(0); }
+    }
+
+    .f40-aurora {
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(230, 0, 0, 0.14) 0%, transparent 65%);
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+      animation: redAurora 8s ease-in-out infinite;
+    }
+
+    .f40-aurora.aurora-2 {
+      top: auto;
+      bottom: -20%;
+      left: auto;
+      right: -10%;
+      width: 55%;
+      height: 55%;
+      animation-delay: -4s;
+      animation-duration: 10s;
+      background: radial-gradient(ellipse, rgba(180, 0, 0, 0.12) 0%, transparent 65%);
+    }
+
+    /* All content above the background layers */
+    header, main, section, footer, .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       FERRARI F40 ANIMATED CANVAS BACKGROUND
+    ════════════════════════════════════════════════════════ */
+    #f40-bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Custom Scrollbar — Ferrari Red */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0406;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #e60000 0%, #8b0000 100%);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ff2222;
+    }
+
+    /* Top Navigation Bar — F40 Red Carbon */
+    header.nav-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(6, 4, 8, 0.92);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--border-strong);
+      box-shadow: 0 1px 0 rgba(230, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.6);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transform: translateY(0);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+      will-change: transform;
+    }
+
+    header.nav-header.nav-hidden {
+      transform: translateY(-100%);
+      box-shadow: none;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .brand-logo img {
+      height: 36px;
+      width: 36px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .brand-text {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-text span {
+      color: var(--accent);
+    }
+
+    nav.nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    nav.nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    nav.nav-links a:hover, nav.nav-links a.active {
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+
+
+    /* Primary Action Buttons — F40 Red */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+      border: none;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #e60000 0%, #b30000 100%);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(230, 0, 0, 0.6), 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff2222 0%, #cc0000 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(230, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn-outline {
+      background: rgba(230, 0, 0, 0.06);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 0 16px rgba(230, 0, 0, 0.2);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section {
+      padding: 80px 0;
+      border-bottom: 1px solid rgba(180, 0, 0, 0.12);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #ff6060;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+      padding: 5px 16px;
+      background: rgba(230, 0, 0, 0.12);
+      border-radius: 20px;
+      border: 1px solid rgba(230, 0, 0, 0.35);
+      box-shadow: 0 0 12px rgba(230, 0, 0, 0.12);
+    }
+
+    .section-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #ff6060 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-subtitle {
+      color: var(--text-dim);
+      font-size: 1.05rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 1: HERO / HOME SECTION
+    ══════════════════════════════════════════════════════════════════════ */
+    #home {
+      padding: 110px 0 80px;
+      position: relative;
+    }
+
+    /* Red line accent on hero */
+    #home::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #e60000 30%, #ff4444 50%, #e60000 70%, transparent);
+      box-shadow: 0 0 20px rgba(230, 0, 0, 0.8);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-content h1 {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero-content h1 span {
+      background: linear-gradient(135deg, #ffffff 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-dim);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .hero-ctas .btn {
+      padding: 14px 32px;
+      font-size: 1.05rem;
+    }
+
+    /* 3 Simple Steps Banner — F40 Red */
+    .steps-banner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      background: rgba(12, 6, 8, 0.9);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: inset 0 1px 0 rgba(255, 60, 60, 0.08), 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .step-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .step-icon {
+      font-size: 1.6rem;
+      width: 48px;
+      height: 48px;
+      background: rgba(230, 0, 0, 0.12);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(230, 0, 0, 0.2);
+    }
+
+    .step-info h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .step-info p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .hero-preview-card {
+      position: relative;
+      background: rgba(12, 6, 8, 0.9);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      padding: 16px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(230, 0, 0, 0.12);
+      overflow: hidden;
+    }
+
+    .hero-preview-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .hero-preview-card img {
+      width: 100%;
+      height: 380px;
+      object-fit: cover;
+      border-radius: var(--radius-lg);
+      filter: brightness(0.88) contrast(1.1);
+    }
+
+    .hero-overlay-badge {
+      position: absolute;
+      bottom: 32px;
+      left: 32px;
+      right: 32px;
+      background: rgba(10, 12, 16, 0.9);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-focus);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge-metric {
+      font-family: var(--font-mono);
+    }
+    .badge-metric .val {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .badge-metric .lbl {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 2: UPLOAD & CAMERA PAGE
+    ══════════════════════════════════════════════════════════════════════ */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+
+    .upload-box-card {
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-box-card:hover, .upload-box-card.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .file-input-hidden {
+      display: none;
+    }
+
+    .camera-stream-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: none;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #000;
+    }
+
+    .camera-stream-wrapper video, .camera-stream-wrapper img {
+      width: 100%;
+      max-height: 340px;
+      object-fit: cover;
+      display: block;
+      border-radius: var(--radius-md);
+    }
+
+    /* Live HUD Overlay Guide */
+    .camera-hud-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      border-radius: var(--radius-md);
+    }
+
+    .camera-status-hud {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(0, 230, 118, 0.4);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.76rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--success);
+      align-self: flex-start;
+      backdrop-filter: blur(4px);
+    }
+
+    .hud-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+      animation: hudPulse 1.4s infinite alternate;
+    }
+
+    @keyframes hudPulse {
+      from { opacity: 0.4; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Green Center Alignment Line */
+    .camera-align-line {
+      position: absolute;
+      top: 50%;
+      left: 6%;
+      right: 6%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00e676 25%, #00e676 75%, transparent);
+      box-shadow: 0 0 14px #00e676;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .camera-align-line::after {
+      content: '▲ ALIGN TREAD GROOVES HORIZONTALLY ▲';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: #00e676;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+
+    /* Target Framing Box */
+    .camera-target-box {
+      position: absolute;
+      top: 16%;
+      bottom: 22%;
+      left: 10%;
+      right: 10%;
+      border: 1px dashed rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .target-corner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: #00e676;
+      border-style: solid;
+    }
+    .target-corner.tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+    .target-corner.tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
+    .target-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
+    .target-corner.br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+
+    /* Calibration Reference Object Cue */
+    .camera-calibration-cue {
+      align-self: flex-start;
+      background: rgba(12, 6, 8, 0.88);
+      border: 1px solid rgba(230, 0, 0, 0.5);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .cue-coin-badge {
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #000;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      letter-spacing: 0.5px;
+    }
+
+    .instructions-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+    }
+
+    .instructions-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+    }
+
+    .instructions-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .instructions-list li {
+      font-size: 0.92rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .instructions-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .photo-samples {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .sample-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .sample-card.good { border-color: var(--success); }
+    .sample-card.bad { border-color: var(--danger); }
+
+    .sample-card img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .sample-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .sample-card.good .sample-label { color: var(--success); }
+    .sample-card.bad .sample-label { color: var(--danger); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 3: VEHICLE & TYRE DETAILS FORM
+    ══════════════════════════════════════════════════════════════════════ */
+    .form-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+    }
+
+    .form-group-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .form-row label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .form-row label span.opt {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .form-row input, .form-row select, select {
+      background: #0d080b;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      color: #ffffff;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      color-scheme: dark;
+    }
+
+    .form-row input:focus, .form-row select:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-soft);
+      background: #140d10;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DROPDOWN OPTIONS: PITCH BLACK BACKGROUND & BRIGHT WHITE TEXT
+    ══════════════════════════════════════════════════════════════════════ */
+    select,
+    select option,
+    select optgroup,
+    .form-row select,
+    .form-row select option,
+    #veh-type,
+    #veh-type option,
+    #veh-model-select,
+    #veh-model-select option,
+    #calib-ref-type,
+    #calib-ref-type option {
+      color-scheme: dark !important;
+      background-color: #0b0709 !important;
+      color: #ffffff !important;
+      font-family: var(--font-sans) !important;
+      font-size: 0.95rem !important;
+    }
+
+    select option:hover,
+    select option:focus,
+    select option:checked,
+    .form-row select option:checked,
+    .form-row select option:hover,
+    #veh-type option:checked,
+    #veh-type option:hover,
+    #veh-model-select option:checked,
+    #veh-model-select option:hover {
+      background-color: #e60000 !important;
+      color: #ffffff !important;
+    }
+
+    .position-options {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .pos-btn {
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .pos-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 4: AI ANALYSIS MODAL / OVERLAY
+    ══════════════════════════════════════════════════════════════════════ */
+    .scan-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(4, 5, 7, 0.94);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .scan-modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .scan-box {
+      width: 90%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-focus);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      text-align: center;
+      position: relative;
+    }
+
+    .scan-image-preview-wrapper {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .scan-image-preview-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .laser-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent);
+      animation: laserSweep 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes laserSweep {
+      0% { top: 0%; }
+      100% { top: 98%; }
+    }
+
+    .scan-steps-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      margin-top: 20px;
+    }
+
+    .scan-step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .scan-step-item.done {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 5 & 6: MAIN RESULT PAGE & DETAILED ANALYSIS
+    ══════════════════════════════════════════════════════════════════════ */
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+
+    .report-main-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .tread-depth-display {
+      margin: 20px 0;
+    }
+
+    .tread-depth-number {
+      font-family: var(--font-mono);
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .tread-depth-unit {
+      font-size: 1.2rem;
+      color: var(--text-dim);
+    }
+
+    /* Gauge Bar */
+    .gauge-wrapper {
+      width: 100%;
+      margin: 24px 0 32px;
+    }
+
+    .gauge-bar-track {
+      position: relative;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      width: 60%;
+      background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 40%, var(--success) 100%);
+      border-radius: 10px;
+      transition: width 1s ease;
+    }
+
+    .gauge-marker-pin {
+      position: absolute;
+      top: -6px;
+      left: 60%;
+      width: 4px;
+      height: 28px;
+      background: #fff;
+      border-radius: 2px;
+      box-shadow: 0 0 10px #fff;
+      transform: translateX(-50%);
+    }
+
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .condition-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 24px;
+    }
+
+    .condition-badge.good { background: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid var(--success); }
+    .condition-badge.monitor { background: rgba(255, 171, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
+    .condition-badge.replace { background: rgba(255, 23, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+
+    .remaining-dist-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 24px;
+      width: 100%;
+    }
+
+    .remaining-dist-val {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Table */
+    .analysis-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+    }
+
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .analysis-table th, .analysis-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.92rem;
+    }
+
+    .analysis-table th {
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .analysis-table td.val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 7: TREAD VISUALIZATION OVERLAY
+    ══════════════════════════════════════════════════════════════════════ */
+    .viz-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .viz-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-focus);
+    }
+
+    .viz-canvas-wrapper canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .viz-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .viz-toggle-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .viz-btn {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .viz-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 8: TYRE LIFE PREDICTION GRAPH
+    ══════════════════════════════════════════════════════════════════════ */
+    .graph-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+    }
+
+    .svg-chart-container {
+      width: 100%;
+      height: 300px;
+      margin: 20px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 9: SAFETY & RECOMMENDATION SECTION
+    ══════════════════════════════════════════════════════════════════════ */
+    .safety-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .safety-status-box {
+      border-left: 4px solid var(--success);
+      padding-left: 20px;
+    }
+
+    .safety-disclaimer-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 10: SCAN HISTORY
+    ══════════════════════════════════════════════════════════════════════ */
+    .history-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 11: USER DASHBOARD / MY TYRES
+    ══════════════════════════════════════════════════════════════════════ */
+    .chassis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 720px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .tyre-card-pos {
+      background: rgba(12, 6, 8, 0.88);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .tyre-card-pos:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(230, 0, 0, 0.25);
+      border-color: var(--accent) !important;
+    }
+
+    .tyre-card-pos.active-target {
+      border-color: #00e676 !important;
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.35) !important;
+    }
+
+    .tyre-card-pos.good {
+      border-color: rgba(0, 230, 118, 0.35);
+    }
+
+    .tyre-card-pos.warning {
+      border-color: rgba(255, 171, 0, 0.5);
+      background: rgba(255, 171, 0, 0.05);
+    }
+
+    .tyre-card-pos.danger {
+      border-color: rgba(255, 23, 68, 0.7);
+      background: rgba(255, 23, 68, 0.07);
+      animation: alertPulse 2s infinite alternate;
+    }
+
+    .tyre-card-pos.unscanned {
+      border: 1.5px dashed rgba(255, 255, 255, 0.22);
+      background: rgba(12, 6, 8, 0.5);
+      opacity: 0.82;
+    }
+
+    .tyre-card-pos.unscanned:hover {
+      opacity: 1;
+      border-color: var(--accent) !important;
+    }
+
+    @keyframes alertPulse {
+      from { box-shadow: 0 0 10px rgba(255, 23, 68, 0.2); }
+      to { box-shadow: 0 0 22px rgba(255, 23, 68, 0.5); }
+    }
+
+    .uneven-wear-alert {
+      margin-top: 24px;
+      background: rgba(255, 171, 0, 0.12);
+      border: 1px solid var(--warning);
+      color: var(--warning);
+      padding: 16px 24px;
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SECTION 12: ABOUT THE AI
+    ══════════════════════════════════════════════════════════════════════ */
+    .about-ai-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+
+    .ai-step-card {
+      background: rgba(12, 6, 8, 0.9);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 24px 16px;
+      text-align: center;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ai-step-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .ai-step-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(230, 0, 0, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .ai-step-card:hover::before {
+      opacity: 1;
+    }
+
+    .ai-step-num {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      text-shadow: 0 0 12px rgba(230, 0, 0, 0.5);
+    }
+
+    .ai-step-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .ai-step-card p {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    /* F40 Red Themed Card Base (global upgrade) */
+    .graph-card, .history-card, .safety-card, .analysis-table-card, .report-main-card {
+      background: rgba(12, 6, 8, 0.9) !important;
+      border-color: var(--border-strong) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(230, 0, 0, 0.06) !important;
+    }
+
+    .graph-card:hover, .history-card:hover, .safety-card:hover {
+      border-color: var(--accent) !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(230, 0, 0, 0.15) !important;
+    }
+
+    /* Footer — F40 Red */
+    footer {
+      padding: 48px 0;
+      text-align: center;
+      border-top: 1px solid var(--border-strong);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      position: relative;
+      background: rgba(6, 4, 8, 0.95);
+      box-shadow: inset 0 1px 0 rgba(230, 0, 0, 0.2);
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(230, 0, 0, 0.6), transparent);
+      box-shadow: 0 0 10px rgba(230, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ferrari F40 Full Canvas Animated Background -->
+  <canvas id="f40-bg-canvas"></canvas>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER NAVIGATION
+  ══════════════════════════════════════════════════════════════════════ -->
+  <header class="nav-header">
+    <a href="#home" class="brand-logo">
+      <img src="tyrz_logo_red.jpg" alt="TYRZ Logo" id="brand-img-logo">
+      <div class="brand-text">TYRZ <span>// AI SCANNER</span></div>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#home" class="active">Home</a>
+      <a href="#scan-section">Scan Tyre</a>
+      <a href="#report-section">Health Report</a>
+      <a href="#viz-section">AI Visualizer</a>
+      <a href="#prediction-section">Wear Life</a>
+      <a href="#dashboard-section">My Vehicle</a>
+      <a href="#about-ai">About AI</a>
+    </nav>
+
+    <div class="header-actions">
+      <!-- Telemetry Server Link Status -->
+      <div id="landing-server-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(0, 230, 118, 0.12); border: 1px solid rgba(0, 230, 118, 0.3); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: #00e676;">
+        <span id="landing-server-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block;"></span>
+        <span id="landing-server-text">TELEMETRY LINK ACTIVE</span>
+      </div>
+
+      <!-- User Profile / Auth Actions -->
+      <div id="user-nav-profile" style="display: flex; align-items: center; gap: 10px;">
+        <a href="index.html" id="nav-login-btn" class="btn btn-outline">🔑 Login / Register</a>
+        <div id="nav-user-badge" style="display: none; align-items: center; gap: 10px;">
+          <span id="nav-user-name" style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--accent);">👤 Pilot</span>
+          <button type="button" onclick="logoutUser()" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.78rem;">Logout 🚪</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       1. HOME PAGE SECTION
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="home">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="section-tag">AI-Powered Computer Vision</div>
+          <h2 id="welcome" style="font-family: var(--font-mono); font-size: 1.4rem; color: var(--accent); margin-top: 10px; margin-bottom: 8px;">Welcome!</h2>
+          <h1>AI Tyre Health <span>Scanner</span></h1>
+          <p class="hero-subtitle">Scan your tyre. Measure tread depth. Estimate remaining tyre life with high-precision computer vision algorithms.</p>
+          
+          <div class="hero-ctas">
+            <a href="#scan-section" class="btn btn-primary" onclick="focusScanner()">⚡ Scan My Tyre</a>
+            <a href="index.html" class="btn btn-outline">Telemetry Portal →</a>
+          </div>
+
+          <!-- 3 Simple Steps Banner -->
+          <div class="steps-banner">
+            <div class="step-card">
+              <div class="step-icon">📷</div>
+              <div class="step-info">
+                <h4>Take Photo</h4>
+                <p>Capture tread pattern</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-icon">🤖</div>
+              <div class="step-info">
+                <h4>AI Analysis</h4>
+                <p>Compute 3D wear profile</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-icon">📊</div>
+              <div class="step-info">
+                <h4>Health Report</h4>
+                <p>Get tread depth & life</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-preview-card">
+          <img src="f40_real_tyre.png" alt="Ferrari F40 Tyre Tread">
+          <div class="hero-overlay-badge">
+            <div class="badge-metric">
+              <div class="val">4.8 mm</div>
+              <div class="lbl">Tread Depth</div>
+            </div>
+            <div class="badge-metric">
+              <div class="val" style="color: var(--success);">🟢 GOOD</div>
+              <div class="lbl">Condition</div>
+            </div>
+            <div class="badge-metric">
+              <div class="val">28,500 km</div>
+              <div class="lbl">Est. Remaining</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       2. TYRE IMAGE UPLOAD / CAMERA PAGE
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="scan-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Step 1 — Image Capture</div>
+        <h2 class="section-title">Upload Tyre Photo or Use Camera</h2>
+        <p class="section-subtitle">Take a photo using your device camera or upload an existing image of your tyre tread.</p>
+      </div>
+
+      <div class="upload-grid">
+        <!-- Drag & Drop Upload Zone -->
+        <div class="upload-box-card" id="drop-zone" onclick="triggerFileInput()">
+          <input type="file" id="tyre-file-input" class="file-input-hidden" accept="image/*" onchange="handleFileSelect(event)">
+          
+          <div id="upload-prompt-view">
+            <div class="upload-icon">📷</div>
+            <h3>Drag & Drop Tyre Image</h3>
+            <p style="color: var(--text-dim); margin-top: 8px;">or click to browse from device</p>
+            <div style="margin-top: 20px;">
+              <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); startCamera();">📷 Use Live Camera</button>
+            </div>
+          </div>
+
+          <div id="camera-view" class="camera-stream-wrapper">
+            <video id="webcam-feed" autoplay playsinline></video>
+            
+            <!-- Live Camera Overlay Guide & Calibration Cues -->
+            <div class="camera-hud-overlay">
+              <div class="camera-status-hud">
+                <span class="hud-dot"></span>
+                <span>AI OPTICAL SENSOR LIVE</span>
+              </div>
+              
+              <div class="camera-target-box">
+                <div class="target-corner tl"></div>
+                <div class="target-corner tr"></div>
+                <div class="target-corner bl"></div>
+                <div class="target-corner br"></div>
+              </div>
+
+              <div class="camera-align-line"></div>
+
+              <div class="camera-calibration-cue">
+                <span class="cue-coin-badge">🪙 SCALE REF</span>
+                <span>Place coin (~19mm) or card flat beside tread for scale</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; position: relative; z-index: 2;">
+              <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); captureCameraPhoto();">📸 Capture Photo</button>
+              <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); stopCamera();">Cancel</button>
+            </div>
+          </div>
+
+          <div id="image-preview-view" style="display: none; width: 100%;">
+            <img id="uploaded-preview-img" src="" alt="Selected Tyre" style="max-height: 260px; border-radius: 12px; object-fit: cover;">
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+              <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); resetUpload();">🔄 Retake Photo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instructions Box with Calibration Guidance -->
+        <div class="instructions-card">
+          <div style="background: rgba(230, 0, 0, 0.12); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px;">
+            <div style="font-weight: 700; color: #fff; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
+              <span>🎯 CALIBRATION CUE</span>
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-dim); margin-top: 6px; line-height: 1.5;">
+              <strong>Include a reference object (e.g., coin or credit card)</strong> flat against or beside the tyre tread for millimeter scale calibration.
+            </p>
+          </div>
+          <h3>💡 For Accurate Results</h3>
+          <ul class="instructions-list">
+            <li>Place reference object (coin ~19-25mm or card) flat in the camera plane.</li>
+            <li>Align tyre grooves with the green optical guidance line.</li>
+            <li>Ensure the tread area is well illuminated with good lighting.</li>
+            <li>Keep the camera straight and perpendicular to the tread.</li>
+            <li>Include the complete width of the tread pattern if possible.</li>
+          </ul>
+
+          <h4 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-dim);">Photo Guidelines:</h4>
+          <div class="photo-samples">
+            <div class="sample-card good">
+              <img src="f40_real_tyre.png" alt="Good Photo Example">
+              <div class="sample-label">✓ Good Photo (With Ref)</div>
+            </div>
+            <div class="sample-card bad">
+              <img src="f40_wheel.jpg" alt="Bad Photo Example">
+              <div class="sample-label">✗ Blurry / Far Away</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════
+           3. VEHICLE & TYRE DETAILS FORM
+      ══════════════════════════════════════════════════════════════════════ -->
+      <div style="margin-top: 48px;">
+        <form id="vehicle-details-form" onsubmit="runAIAnalysis(event)">
+          <div class="form-grid-2col">
+            <div>
+              <div class="form-group-title">🚗 Vehicle Details</div>
+              <div class="form-row">
+                <label>Vehicle Category</label>
+                <select id="veh-type" onchange="onVehicleTypeChange(this.value)">
+                  <option value="car">🚗 Car / Sedan / Hatchback</option>
+                  <option value="suv">🚙 SUV / Crossover / 4x4</option>
+                  <option value="pickup">🛻 Pickup Truck / Light Truck</option>
+                  <option value="truck">🚚 Heavy Commercial Truck / Semi / Lorry</option>
+                  <option value="bus">🚌 Bus / Coach / Transit</option>
+                  <option value="van">🚐 Commercial Van / Minivan / LCV</option>
+                  <option value="bike">🏍️ Motorcycle / Scooter / Superbike</option>
+                  <option value="ev">⚡ Electric Vehicle (EV) / Hybrid</option>
+                  <option value="supercar">🏎️ Sports Car & Supercar (Ferrari F40, GT)</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Vehicle Make & Model <span class="opt">(Choose from vehicle list or type below)</span></label>
+                <select id="veh-model-select" onchange="onVehicleSelectChange(this.value)">
+                  <option value="">🚗 Choose a vehicle from the list...</option>
+                  <option value="Maruti Suzuki Swift" data-size="185/65 R15" data-brand="MRF ZVTV" data-year="2023">Maruti Suzuki Swift (2023)</option>
+                  <option value="Hyundai i20" data-size="195/55 R16" data-brand="Apollo Alnac 4G" data-year="2023">Hyundai i20 (2023)</option>
+                  <option value="Honda City" data-size="185/55 R16" data-brand="Bridgestone Turanza" data-year="2023">Honda City (2023)</option>
+                  <option value="Toyota Camry" data-size="215/55 R17" data-brand="Michelin Primacy 4" data-year="2024">Toyota Camry (2024)</option>
+                  <option value="Honda Civic" data-size="215/50 R17" data-brand="Goodyear Eagle Sport" data-year="2023">Honda Civic (2023)</option>
+                  <option value="BMW 3 Series" data-size="225/45 R18" data-brand="Pirelli Cinturato P7" data-year="2024">BMW 3 Series (2024)</option>
+                  <option value="Mercedes-Benz C-Class" data-size="225/50 R17" data-brand="Continental ProContact" data-year="2024">Mercedes-Benz C-Class (2024)</option>
+                  <option value="Hyundai Elantra" data-size="205/55 R16" data-brand="Hankook Kinergy" data-year="2023">Hyundai Elantra (2023)</option>
+                  <option value="Volkswagen Golf" data-size="205/55 R16" data-brand="Bridgestone Turanza" data-year="2023">Volkswagen Golf (2023)</option>
+                  <option value="__custom__">✍️ Custom / Type other vehicle model...</option>
+                </select>
+                <input type="text" id="veh-model" placeholder="Or type custom vehicle (e.g. Maruti Suzuki Swift / Toyota RAV4)" oninput="onVehicleModelInput(this.value)" style="margin-top: 8px;">
+              </div>
+              <div class="form-row">
+                <label>Model Year <span class="opt">(Optional)</span></label>
+                <input type="number" id="veh-year" placeholder="e.g. 2024">
+              </div>
+            </div>
+
+            <div>
+              <div class="form-group-title">🛞 Tyre Details &amp; Calibration</div>
+              <div class="form-row">
+                <label>Tyre Brand & Model</label>
+                <input type="text" id="tyre-brand" placeholder="e.g. Pirelli P Zero / Michelin Pilot Sport">
+              </div>
+              <div class="form-row">
+                <label>Calibration Scale Reference</label>
+                <select id="calib-ref-type">
+                  <option value="coin_us_quarter">🪙 US Quarter Coin (24.26 mm)</option>
+                  <option value="coin_euro_2">🪙 Euro 2€ Coin (25.75 mm)</option>
+                  <option value="coin_euro_1">🪙 Euro 1€ Coin (23.25 mm)</option>
+                  <option value="coin_uk_pound">🪙 UK £1 Coin (23.43 mm)</option>
+                  <option value="coin_in_rupee_5">🪙 Indian ₹5 Coin (23.00 mm)</option>
+                  <option value="coin_in_rupee_10">🪙 Indian ₹10 Coin (27.00 mm)</option>
+                  <option value="coin_jp_yen_100">🪙 Japanese 100¥ Coin (22.60 mm)</option>
+                  <option value="coin_ca_dollar_1">🪙 Canadian $1 Loonie (26.50 mm)</option>
+                  <option value="card_credit">💳 ID / Credit Card Width (85.60 mm)</option>
+                  <option value="gauge_depth">📏 Digital/Mechanical Depth Gauge (50.00 mm)</option>
+                  <option value="auto_detect">⚡ AI Auto-Detect Reference Scale</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Tyre Size</label>
+                <input type="text" id="tyre-size" placeholder="e.g. 205/55 R16, 315/80 R22.5, or 120/70 ZR17">
+              </div>
+              <div class="form-row">
+                <label>Position on Vehicle</label>
+                <div class="position-options" id="position-container">
+                  <div class="pos-btn active" onclick="selectPos(this, 'FL')">Front Left</div>
+                  <div class="pos-btn" onclick="selectPos(this, 'FR')">Front Right</div>
+                  <div class="pos-btn" onclick="selectPos(this, 'RL')">Rear Left</div>
+                  <div class="pos-btn" onclick="selectPos(this, 'RR')">Rear Right</div>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>Current Odometer Reading <span class="opt">(Optional, km)</span></label>
+                <input type="number" id="veh-odometer" placeholder="e.g. 45000">
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 32px;">
+            <button type="submit" class="btn btn-primary" style="padding: 16px 48px; font-size: 1.1rem;">⚡ Run AI Tyre Health Scan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       4. AI ANALYSIS SCANNING OVERLAY MODAL
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div id="ai-scan-modal" class="scan-modal-overlay">
+    <div class="scan-box">
+      <h3 style="font-size: 1.4rem; margin-bottom: 16px;">🔍 Analyzing your tyre...</h3>
+      
+      <div class="scan-image-preview-wrapper">
+        <img id="scanning-img-target" src="f40_real_tyre.png" alt="Scanning Tyre">
+        <div class="laser-line"></div>
+      </div>
+
+      <div class="scan-steps-checklist">
+        <div class="scan-step-item" id="step-detect">⏳ Tyre detection in progress...</div>
+        <div class="scan-step-item" id="step-quality">⏳ Checking image clarity & illumination...</div>
+        <div class="scan-step-item" id="step-depth">⏳ Estimating tread-depth grooves...</div>
+        <div class="scan-step-item" id="step-life">⏳ Calculating remaining wear life...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placeholder shown BEFORE scan output is produced -->
+  <div id="awaiting-scan-placeholder" class="container" style="margin: 40px auto 60px auto;">
+    <div style="background: rgba(12, 6, 8, 0.75); border: 1px dashed var(--border-strong); border-radius: var(--radius-xl); padding: 52px 24px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+      <div style="font-size: 2.8rem; margin-bottom: 14px; filter: drop-shadow(0 0 16px rgba(230,0,0,0.6));">📡</div>
+      <h3 style="font-size: 1.35rem; color: #fff; margin-bottom: 8px; font-weight: 700;">Awaiting Tyre Telemetry Scan</h3>
+      <p style="color: var(--text-dim); max-width: 560px; margin: 0 auto 20px auto; font-size: 0.92rem; line-height: 1.6;">
+        Upload a tyre photo or use your camera in <strong>Step 1</strong> above, then click <strong style="color: var(--accent);">⚡ Run AI Tyre Health Scan</strong> to generate your real-time tread depth diagnostic report, computer vision groove mapping, and wear life forecast.
+      </p>
+      <a href="#scan-section" class="btn btn-outline" style="padding: 10px 24px; font-size: 0.88rem;">↑ Go to Scanner</a>
+    </div>
+  </div>
+
+  <!-- Container for all scan output sections (Hidden by default until output is generated) -->
+  <div id="analysis-output-container" style="display: none;">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       5 & 6. MAIN RESULT PAGE & DETAILED ANALYSIS
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="report-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Step 2 — Diagnostic Report</div>
+        <h2 class="section-title">🛞 Tyre Health Report</h2>
+        <p class="section-subtitle">Real-time computer vision analysis results for your scanned tyre.</p>
+      </div>
+
+      <div class="report-grid">
+        <!-- Main Summary Gauge Card -->
+        <div class="report-main-card">
+          <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-dim);">ESTIMATED TREAD DEPTH</div>
+          <div class="tread-depth-display">
+            <span class="tread-depth-number" id="report-depth-val">4.8</span>
+            <span class="tread-depth-unit">mm</span>
+          </div>
+
+          <div class="condition-badge good" id="report-condition-badge">🟢 Condition: Good</div>
+
+          <!-- Visual Gauge Bar (0 mm to 8 mm) -->
+          <div class="gauge-wrapper">
+            <div class="gauge-bar-track">
+              <div class="gauge-fill" id="gauge-fill-bar"></div>
+              <div class="gauge-marker-pin" id="gauge-pin"></div>
+            </div>
+            <div class="gauge-labels">
+              <span>0 mm</span>
+              <span>1.6 (Limit)</span>
+              <span>3.0</span>
+              <span>5.0</span>
+              <span>8.0 mm</span>
+            </div>
+          </div>
+
+          <div class="remaining-dist-box">
+            <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px;">ESTIMATED REMAINING LIFE</div>
+            <div class="remaining-dist-val" id="report-km-val">Approximately 25,000 – 32,000 km</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">*AI estimated wear range based on current tread depth.</div>
+          </div>
+        </div>
+
+        <!-- Detailed Analysis Table -->
+        <div class="analysis-table-card">
+          <h3 style="font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">📊 Detailed Parameter Analysis</h3>
+          <table class="analysis-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th style="text-align: right;">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tread Depth</td>
+                <td class="val" id="tbl-depth">4.8 mm</td>
+              </tr>
+              <tr>
+                <td>Estimated Wear Percentage</td>
+                <td class="val" id="tbl-wear-pct">40%</td>
+              </tr>
+              <tr>
+                <td>Remaining Usable Tread</td>
+                <td class="val" id="tbl-usable-tread">3.2 mm (Above 1.6mm limit)</td>
+              </tr>
+              <tr>
+                <td>Overall Condition</td>
+                <td class="val" id="tbl-condition" style="color: var(--success);">🟢 Good</td>
+              </tr>
+              <tr>
+                <td>Estimated Remaining Distance</td>
+                <td class="val" id="tbl-km">25,000–32,000 km</td>
+              </tr>
+              <tr>
+                <td>AI Confidence Rating</td>
+                <td class="val" id="tbl-confidence" style="color: var(--accent);">87% (High Clarity)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       7. TREAD VISUALIZATION OVERLAY
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="viz-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Step 3 — Computer Vision Visualization</div>
+        <h2 class="section-title">AI Tread Detection & Depth Overlay</h2>
+        <p class="section-subtitle">Visualizing the exact tread region analyzed by our neural network overlay.</p>
+      </div>
+
+      <div class="viz-container">
+        <div class="viz-canvas-wrapper">
+          <canvas id="tread-viz-canvas" width="600" height="340"></canvas>
+        </div>
+
+        <div class="viz-controls">
+          <h3 style="font-size: 1.2rem;">AI Detection Layers</h3>
+          <p style="font-size: 0.9rem; color: var(--text-dim);">Toggle visual inspection layers to verify computer vision depth feature maps and groove contour detection.</p>
+          
+          <div class="viz-toggle-group">
+            <button class="viz-btn active" onclick="setVizMode('contour')">🟢 Tread Contours</button>
+            <button class="viz-btn" onclick="setVizMode('heatmap')">🔥 Thermal Wear Map</button>
+            <button class="viz-btn" onclick="setVizMode('raw')">🖼️ Raw Photo</button>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent);">Detected Tread Region</div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Primary groove depth: <strong id="viz-detected-depth">4.8 mm</strong> across 4 main channel grooves.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       8. TYRE LIFE PREDICTION GRAPH
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="prediction-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Step 4 — Wear Life Forecast</div>
+        <h2 class="section-title">Tread Depth vs. Distance Driven</h2>
+        <p class="section-subtitle">Projected wear rate trajectory down to the 1.6mm legal replacement threshold.</p>
+      </div>
+
+      <div class="graph-card">
+        <div class="svg-chart-container">
+          <svg id="tyre-wear-svg" width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none">
+            <defs>
+              <!-- Shaded gradient for the wear area beneath curve -->
+              <linearGradient id="wear-area-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e60000" stop-opacity="0.35" />
+                <stop offset="60%" stop-color="#e60000" stop-opacity="0.10" />
+                <stop offset="100%" stop-color="#e60000" stop-opacity="0.0" />
+              </linearGradient>
+
+              <!-- Glow filter for active telemetry marker -->
+              <filter id="point-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Horizontal Depth Grid Lines -->
+            <line x1="80" y1="45" x2="740" y2="45" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4"/>
+            <line x1="80" y1="100" x2="740" y2="100" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4"/>
+            <line x1="80" y1="155" x2="740" y2="155" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4"/>
+            <line x1="80" y1="210" x2="740" y2="210" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4"/>
+            <!-- 1.6 mm Legal Limit Threshold Line (Red Dash) -->
+            <line x1="80" y1="221" x2="740" y2="221" stroke="#ff1744" stroke-dasharray="6,4" stroke-width="2"/>
+
+            <!-- Y-Axis Depth Labels -->
+            <text x="25" y="49" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace">8.0 mm</text>
+            <text x="25" y="104" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace">6.0 mm</text>
+            <text x="25" y="159" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace">4.0 mm</text>
+            <text x="25" y="214" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace">2.0 mm</text>
+            <text x="10" y="225" fill="#ff1744" font-size="11" font-weight="700" font-family="'JetBrains Mono', monospace">1.6mm (Limit)</text>
+
+            <!-- X-Axis Distance Labels -->
+            <text x="80" y="275" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">0 km</text>
+            <text x="245" y="275" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">15,000 km</text>
+            <text x="410" y="275" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">30,000 km</text>
+            <text x="575" y="275" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">45,000 km</text>
+            <text x="740" y="275" fill="#a0a0a0" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">60,000 km</text>
+
+            <!-- Shaded Area Under Wear Curve -->
+            <path id="chart-wear-area" d="M 80 45 Q 380 110 740 221 L 740 221 L 80 221 Z" fill="url(#wear-area-grad)" />
+
+            <!-- Precision Wear Trajectory Curve Line -->
+            <path id="chart-wear-curve" d="M 80 45 Q 380 110 740 221" fill="none" stroke="#e60000" stroke-width="3.5" stroke-linecap="round" />
+
+            <!-- Vertical Tracking Line Down to X-Axis -->
+            <line id="chart-tracking-line" x1="395" y1="121.5" x2="395" y2="255" stroke="rgba(230,0,0,0.4)" stroke-dasharray="3,3" stroke-width="1.5" />
+
+            <!-- Pulsing Ring on Marker -->
+            <circle id="chart-marker-pulse" cx="395" cy="121.5" r="14" fill="rgba(230,0,0,0.25)">
+              <animate attributeName="r" values="8;18;8" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.8;0.1;0.8" dur="2s" repeatCount="indefinite" />
+            </circle>
+
+            <!-- Current Scan Marker Dot (Precisely on Curve) -->
+            <circle id="chart-marker-dot" cx="395" cy="121.5" r="7.5" fill="#e60000" stroke="#ffffff" stroke-width="2.5" filter="url(#point-glow)" />
+
+            <!-- Floating Telemetry HUD Badge -->
+            <g id="chart-marker-badge" transform="translate(395, 92)">
+              <rect x="-68" y="-14" width="136" height="26" rx="6" fill="#120609" stroke="#e60000" stroke-width="1.2" />
+              <text id="chart-badge-text" x="0" y="3.5" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700" font-family="'JetBrains Mono', monospace">Current: 4.8 mm</text>
+            </g>
+          </svg>
+        </div>
+
+        <p style="font-size: 0.92rem; color: var(--text-dim); line-height: 1.6; text-align: center; max-width: 750px; margin: 0 auto;">
+          Based on the calculated tread wear rate, the tyre is projected to reach the <strong>1.6 mm legal replacement threshold</strong> after approximately <strong id="graph-remaining-km-text" style="color: var(--accent);">24,000 km</strong> under normal driving conditions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       9. SAFETY / RECOMMENDATION SECTION
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="safety-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Safety Advisory</div>
+        <h2 class="section-title">⚠️ Tyre Status & Recommendations</h2>
+      </div>
+
+      <div class="safety-card">
+        <div class="safety-status-box">
+          <h3 style="font-size: 1.3rem; margin-bottom: 12px; color: var(--success);" id="safety-status-title">Current Status: Good</h3>
+          <p style="font-size: 0.95rem; color: var(--text-dim); line-height: 1.6;" id="safety-status-desc">
+            Your estimated tread depth of 4.8 mm is well above the 1.6 mm legal safety limit. Continue monitoring tread wear regularly every 5,000 km.
+          </p>
+        </div>
+
+        <div class="safety-disclaimer-box">
+          <strong style="color: var(--text);">Important Disclaimer:</strong><br>
+          AI depth estimations are influenced by photo clarity, lighting angle, tyre pressure, and surface cleanliness. This automated scan tool provides informative estimates and should not replace a physical inspection by a qualified professional technician.
+        </div>
+      </div>
+    </div>
+  </section>
+  </div> <!-- /#analysis-output-container (Hidden until output is generated) -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       10. SCAN HISTORY
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="history-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Saved Records</div>
+        <h2 class="section-title">📋 Previous Scan History</h2>
+      </div>
+
+      <div class="history-card">
+        <table class="analysis-table" id="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Vehicle / Position</th>
+              <th>Tread Depth</th>
+              <th>Condition</th>
+              <th>Est. Remaining</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Dynamically Populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+  <!-- 11. USER DASHBOARD / MY TYRES (Hidden by default; only appears after user provides input/scans) -->
+  <section id="dashboard-section" style="display: none;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Vehicle Overview</div>
+        <h2 class="section-title">🚗 My Vehicle — 4 Tyre Monitor</h2>
+        <p class="section-subtitle">Real-time health tracking across all four wheels. Click any tyre to select and calibrate a targeted scan.</p>
+      </div>
+
+      <!-- Vehicle Model & Telemetry Bar -->
+      <div style="max-width: 720px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; background: rgba(12, 6, 8, 0.7); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 12px 20px; font-size: 0.88rem;">
+        <div>
+          <span style="color: var(--text-dim);">Monitored Vehicle:</span>
+          <strong id="chassis-veh-name" style="color: #fff; margin-left: 6px;">Ferrari F40 Berlinetta</strong>
+        </div>
+        <div id="chassis-avg-tread" style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);">
+          Avg Depth: 4.5 mm
+        </div>
+      </div>
+
+      <!-- Dynamic 4-Tyre Grid Container -->
+      <div class="chassis-grid" id="chassis-grid-container">
+        <!-- Rendered dynamically by render4TyreMonitor() -->
+      </div>
+
+      <!-- Uneven Wear Analysis Alert -->
+      <div id="chassis-wear-alert" class="uneven-wear-alert">
+        <!-- Computed dynamically by render4TyreMonitor() -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       12. ABOUT THE AI
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="about-ai">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Technology</div>
+        <h2 class="section-title">How Our AI Works</h2>
+        <p class="section-subtitle">5-stage deep learning pipeline for tread depth estimation.</p>
+      </div>
+
+      <div class="about-ai-grid">
+        <div class="ai-step-card">
+          <div class="ai-step-num">01</div>
+          <h4>Image Capture</h4>
+          <p>User takes or uploads a tread photo.</p>
+        </div>
+
+        <div class="ai-step-card">
+          <div class="ai-step-num">02</div>
+          <h4>Computer Vision</h4>
+          <p>YOLO network isolates tyre tread area.</p>
+        </div>
+
+        <div class="ai-step-card">
+          <div class="ai-step-num">03</div>
+          <h4>Tread Depth</h4>
+          <p>Shadow contour mapping measures depth.</p>
+        </div>
+
+        <div class="ai-step-card">
+          <div class="ai-step-num">04</div>
+          <h4>Wear Prediction</h4>
+          <p>Regression model calculates remaining km.</p>
+        </div>
+
+        <div class="ai-step-card">
+          <div class="ai-step-num">05</div>
+          <h4>Health Report</h4>
+          <p>Generates detailed report & advice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>© 2026 Ferrari F40 Telemetry & AI Tyre Diagnostics Portal. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       JAVASCRIPT INTERACTIVITY & LOGIC
+  ══════════════════════════════════════════════════════════════════════ -->
+  <script src="vehicle-tyre-dataset.js"></script>
+  <script>
+    // ── Resilient Telemetry API Client ─────────────────────────────────────────
+    function getApiBaseUrl() {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+        if (window.location.port && window.location.port !== '5000') {
+          return `${window.location.protocol}//${window.location.hostname}:5000`;
+        }
+        return '';
+      }
+      return 'http://localhost:5000';
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+      const base = getApiBaseUrl();
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      const url = endpoint.startsWith('http') ? endpoint : `${base}${cleanEndpoint}`;
+
+      const opts = {
+        ...options,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      };
+
+      const token = localStorage.getItem('token');
+      if (token && !opts.headers['Authorization']) {
+        opts.headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      try {
+        return await fetch(url, opts);
+      } catch (err) {
+        if (url.includes('localhost:5000')) {
+          const fallbackUrl = url.replace('localhost:5000', '127.0.0.1:5000');
+          return await fetch(fallbackUrl, opts);
+        }
+        throw err;
+      }
+    }
+
+    async function checkLandingServerConnection() {
+      const pill = document.getElementById('landing-server-pill');
+      const dot = document.getElementById('landing-server-dot');
+      const text = document.getElementById('landing-server-text');
+      if (!pill || !dot || !text) return;
+
+      try {
+        const res = await apiFetch('/api/status');
+        if (res.ok) {
+          pill.style.background = 'rgba(0, 230, 118, 0.12)';
+          pill.style.borderColor = 'rgba(0, 230, 118, 0.3)';
+          pill.style.color = '#00e676';
+          dot.style.background = '#00e676';
+          text.textContent = 'TELEMETRY LINK ACTIVE';
+        } else {
+          throw new Error('Status ' + res.status);
+        }
+      } catch (e) {
+        pill.style.background = 'rgba(230, 0, 0, 0.15)';
+        pill.style.borderColor = 'rgba(230, 0, 0, 0.4)';
+        pill.style.color = '#ff4d4d';
+        dot.style.background = '#ff4d4d';
+        text.textContent = 'LINK OFFLINE (RETRY)';
+        pill.style.cursor = 'pointer';
+        pill.onclick = () => {
+          text.textContent = 'RECONNECTING...';
+          checkLandingServerConnection();
+        };
+      }
+    }
+
+    let currentSelectedPosition = 'FL';
+    let uploadedImageBase64 = 'f40_real_tyre.png';
+    let currentVizMode = 'contour';
+    let currentStream = null;
+
+    // Complete vehicle catalogue (integrated with tyre-backend-mongodb)
+    const CATALOGUE_VEHICLES = {
+      car: [
+        { model: 'Maruti Suzuki Swift', year: 2023, defaultSize: '185/65 R15', brand: 'MRF ZVTV' },
+        { model: 'Hyundai i20', year: 2023, defaultSize: '195/55 R16', brand: 'Apollo Alnac 4G' },
+        { model: 'Honda City', year: 2023, defaultSize: '185/55 R16', brand: 'Bridgestone Turanza' },
+        { model: 'Toyota Camry', year: 2024, defaultSize: '215/55 R17', brand: 'Michelin Primacy 4' },
+        { model: 'Honda Civic', year: 2023, defaultSize: '215/50 R17', brand: 'Goodyear Eagle Sport' },
+        { model: 'BMW 3 Series', year: 2024, defaultSize: '225/45 R18', brand: 'Pirelli Cinturato P7' },
+        { model: 'Mercedes-Benz C-Class', year: 2024, defaultSize: '225/50 R17', brand: 'Continental ProContact' },
+        { model: 'Hyundai Elantra', year: 2023, defaultSize: '205/55 R16', brand: 'Hankook Kinergy' },
+        { model: 'Volkswagen Golf', year: 2023, defaultSize: '205/55 R16', brand: 'Bridgestone Turanza' }
+      ],
+      suv: [
+        { model: 'Hyundai Creta', year: 2023, defaultSize: '215/60 R17', brand: 'JK Tyre UX Royale' },
+        { model: 'Tata Nexon', year: 2023, defaultSize: '195/60 R16', brand: 'Goodyear Assurance' },
+        { model: 'Toyota RAV4', year: 2024, defaultSize: '225/65 R17', brand: 'Yokohama Geolandar' },
+        { model: 'Honda CR-V', year: 2024, defaultSize: '235/60 R18', brand: 'Bridgestone Ecopia' },
+        { model: 'Ford Explorer', year: 2023, defaultSize: '255/55 R20', brand: 'Michelin Premier LTX' },
+        { model: 'Jeep Grand Cherokee', year: 2023, defaultSize: '265/60 R18', brand: 'Pirelli Scorpion' },
+        { model: 'BMW X5', year: 2024, defaultSize: '275/45 R20', brand: 'Continental CrossContact' },
+        { model: 'Toyota Land Cruiser', year: 2024, defaultSize: '285/60 R18', brand: 'Dunlop Grandtrek' }
+      ],
+      bike: [
+        { model: 'Honda Activa 6G', year: 2023, defaultSize: '90/90-12', brand: 'MRF Nylogrip' },
+        { model: 'Royal Enfield Classic 350', year: 2023, defaultSize: '100/90-19', brand: 'CEAT Zoom Plus' },
+        { model: 'Bajaj Pulsar 150', year: 2023, defaultSize: '90/90-17', brand: 'MRF Zapper' },
+        { model: 'Hero Splendor Plus', year: 2023, defaultSize: '80/100-18', brand: 'Apollo ActiGrip' },
+        { model: 'Yamaha YZF-R15', year: 2024, defaultSize: '100/80-17', brand: 'MRF Revz' },
+        { model: 'KTM Duke 390', year: 2024, defaultSize: '110/70 ZR17', brand: 'Metzeler Sportec' },
+        { model: 'Ducati Panigale V4', year: 2024, defaultSize: '120/70 ZR17', brand: 'Pirelli Diablo Supercorsa' }
+      ],
+      truck: [
+        { model: 'Volvo FH16 Commercial Truck', year: 2024, defaultSize: '315/80 R22.5', brand: 'Michelin X Multi' },
+        { model: 'Scania R500 Long Haul', year: 2023, defaultSize: '315/80 R22.5', brand: 'Bridgestone Ecopia H002' },
+        { model: 'Mercedes-Benz Actros', year: 2024, defaultSize: '315/70 R22.5', brand: 'Continental Conti EcoPlus' },
+        { model: 'Tata Prima Heavy Truck', year: 2023, defaultSize: '295/80 R22.5', brand: 'MRF Super Lug' },
+        { model: 'Ashok Leyland 2820', year: 2023, defaultSize: '295/90 R20', brand: 'Apollo EnduRace' }
+      ],
+      bus: [
+        { model: 'Mercedes-Benz Tourismo Coach', year: 2024, defaultSize: '295/80 R22.5', brand: 'Michelin X Coach' },
+        { model: 'Volvo 9700 Luxury Bus', year: 2023, defaultSize: '295/80 R22.5', brand: 'Bridgestone Coach' },
+        { model: 'Tata Starbus City Transit', year: 2023, defaultSize: '225/75 R17.5', brand: 'CEAT Urban' }
+      ],
+      van: [
+        { model: 'Mercedes-Benz Sprinter Van', year: 2024, defaultSize: '235/65 R16C', brand: 'Continental VanContact' },
+        { model: 'Ford Transit Custom', year: 2023, defaultSize: '215/65 R16C', brand: 'Goodyear EfficientGrip Cargo' },
+        { model: 'Toyota HiAce Minivan', year: 2024, defaultSize: '195/80 R15C', brand: 'Bridgestone Duravis' }
+      ],
+      pickup: [
+        { model: 'Ford F-150', year: 2024, defaultSize: '275/65 R18', brand: 'Goodyear Wrangler' },
+        { model: 'Toyota Hilux', year: 2024, defaultSize: '265/65 R17', brand: 'Bridgestone Dueler A/T' },
+        { model: 'Isuzu D-Max V-Cross', year: 2023, defaultSize: '255/60 R18', brand: 'MRF Wanderer' }
+      ],
+      ev: [
+        { model: 'Tesla Model 3', year: 2024, defaultSize: '235/45 R18', brand: 'Michelin e.Primacy' },
+        { model: 'Tesla Model Y', year: 2024, defaultSize: '255/45 R19', brand: 'Hankook iON evo' },
+        { model: 'Porsche Taycan', year: 2024, defaultSize: '245/45 R20', brand: 'Pirelli P Zero Elect' },
+        { model: 'Hyundai Ioniq 5', year: 2024, defaultSize: '235/55 R19', brand: 'Michelin Primacy 4 EV' },
+        { model: 'Tata Nexon EV', year: 2024, defaultSize: '215/60 R16', brand: 'MRF Wanderer EV' }
+      ],
+      supercar: [
+        { model: 'Ferrari F40 (1987 Scuderia)', year: 1987, defaultSize: '335/35 ZR17', brand: 'Pirelli P Zero Corsa (Asimmetrico)' },
+        { model: 'Porsche 911 GT3 RS', year: 2024, defaultSize: '275/35 ZR20', brand: 'Michelin Pilot Sport Cup 2 R' },
+        { model: 'Lamborghini Huracán STO', year: 2023, defaultSize: '245/30 ZR20', brand: 'Bridgestone Potenza Sport' },
+        { model: 'Ferrari 488 Pista', year: 2020, defaultSize: '305/30 ZR20', brand: 'Michelin Pilot Sport Cup 2' }
+      ]
+    };
+
+    const CATEGORY_ICONS = {
+      bike: '🏍️',
+      car: '🚗',
+      suv: '🚙',
+      pickup: '🛻',
+      truck: '🚚',
+      bus: '🚌',
+      van: '🚐',
+      ev: '⚡',
+      supercar: '🏎️'
+    };
+
+    function populateVehicleModelList(catKey) {
+      const select = document.getElementById('veh-model-select');
+      if (!select) return;
+
+      const icon = CATEGORY_ICONS[catKey] || '🚗';
+      const label = catKey === 'bike' ? 'motorcycle / bike' : (catKey === 'truck' ? 'commercial truck' : 'vehicle');
+      const list = CATALOGUE_VEHICLES[catKey] || CATALOGUE_VEHICLES.car;
+      let html = `<option value="">${icon} Choose a ${label} from the list...</option>`;
+      list.forEach(v => {
+        html += `<option value="${v.model}" data-size="${v.defaultSize}" data-brand="${v.brand}" data-year="${v.year}">${v.model} (${v.year})</option>`;
+      });
+      html += '<option value="__custom__">✍️ Custom / Type other vehicle model...</option>';
+      select.innerHTML = html;
+    }
+
+    function onVehicleSelectChange(selectedModel) {
+      const select = document.getElementById('veh-model-select');
+      const textInput = document.getElementById('veh-model');
+      const yearInput = document.getElementById('veh-year');
+      const sizeInput = document.getElementById('tyre-size');
+      const brandInput = document.getElementById('tyre-brand');
+
+      if (!selectedModel || selectedModel === '__custom__') {
+        if (textInput) {
+          textInput.value = '';
+          textInput.focus();
+        }
+        return;
+      }
+
+      if (textInput) textInput.value = selectedModel;
+
+      const option = select ? select.options[select.selectedIndex] : null;
+      if (option) {
+        const size = option.getAttribute('data-size');
+        const brand = option.getAttribute('data-brand');
+        const year = option.getAttribute('data-year');
+
+        if (sizeInput && size) sizeInput.value = size;
+        if (brandInput && brand) brandInput.value = brand;
+        if (yearInput && year) yearInput.value = year;
+      }
+
+      if (typeof render4TyreMonitor === 'function') {
+        render4TyreMonitor();
+      }
+    }
+
+    // Vehicle category change handler
+    function onVehicleTypeChange(catKey) {
+      populateVehicleModelList(catKey);
+
+      // Auto-select first popular vehicle of new category
+      const list = CATALOGUE_VEHICLES[catKey] || CATALOGUE_VEHICLES.car;
+      const defaultVeh = list && list[0] ? list[0] : null;
+      const select = document.getElementById('veh-model-select');
+      const textInput = document.getElementById('veh-model');
+      const yearInput = document.getElementById('veh-year');
+      const sizeInput = document.getElementById('tyre-size');
+      const brandInput = document.getElementById('tyre-brand');
+
+      if (defaultVeh) {
+        if (select) select.value = defaultVeh.model;
+        if (textInput) textInput.value = defaultVeh.model;
+        if (yearInput) yearInput.value = defaultVeh.year;
+        if (sizeInput) sizeInput.value = defaultVeh.defaultSize;
+        if (brandInput) brandInput.value = defaultVeh.brand;
+      } else {
+        if (textInput) textInput.value = '';
+      }
+
+      // Built-in fallback category definitions ensuring zero dependency failures
+      const categoryPositions = {
+        bike: [
+          { code: 'F', label: 'Front Wheel' },
+          { code: 'R', label: 'Rear Wheel' }
+        ],
+        truck: [
+          { code: 'L1', label: 'Steer Axle Left (L1)' },
+          { code: 'R1', label: 'Steer Axle Right (R1)' },
+          { code: 'L2', label: 'Drive Axle Outer Left (L2)' },
+          { code: 'R2', label: 'Drive Axle Outer Right (R2)' },
+          { code: 'L3', label: 'Trailer Axle Left (L3)' },
+          { code: 'R3', label: 'Trailer Axle Right (R3)' }
+        ],
+        bus: [
+          { code: 'FL', label: 'Front Left Steer' },
+          { code: 'FR', label: 'Front Right Steer' },
+          { code: 'RL', label: 'Rear Left Drive' },
+          { code: 'RR', label: 'Rear Right Drive' }
+        ]
+      };
+
+      const positions = categoryPositions[catKey] || [
+        { code: 'FL', label: 'Front Left' },
+        { code: 'FR', label: 'Front Right' },
+        { code: 'RL', label: 'Rear Left' },
+        { code: 'RR', label: 'Rear Right' }
+      ];
+
+      const container = document.getElementById('position-container');
+      if (container) {
+        let html = '';
+        positions.forEach((pos, idx) => {
+          const isActive = idx === 0 ? 'active' : '';
+          if (idx === 0) currentSelectedPosition = pos.code;
+          html += `<div class="pos-btn ${isActive}" onclick="selectPos(this, '${pos.code}')">${pos.label}</div>`;
+        });
+        container.innerHTML = html;
+      }
+
+      if (typeof render4TyreMonitor === 'function') {
+        render4TyreMonitor();
+      }
+    }
+
+    function onVehicleModelInput(modelStr) {
+      if (!modelStr || typeof TyrzVehicleDataset === 'undefined') return;
+      const clean = modelStr.trim().toLowerCase();
+      if (clean.length < 2) return;
+
+      for (const catId in TyrzVehicleDataset.categories) {
+        const cat = TyrzVehicleDataset.categories[catId];
+        const match = cat.popularModels.find(m => m.model.toLowerCase().includes(clean));
+        if (match) {
+          const typeSelect = document.getElementById('veh-type');
+          if (typeSelect && typeSelect.value !== cat.id) {
+            typeSelect.value = cat.id;
+            onVehicleTypeChange(cat.id);
+          }
+          if (match.defaultSize) {
+            const sizeInput = document.getElementById('tyre-size');
+            if (sizeInput) sizeInput.value = match.defaultSize;
+          }
+          if (match.brand) {
+            const brandInput = document.getElementById('tyre-brand');
+            if (brandInput) brandInput.value = match.brand;
+          }
+          break;
+        }
+      }
+    }
+
+    function initVehicleModels() {
+      const typeSelect = document.getElementById('veh-type');
+      const catKey = (typeSelect && typeSelect.value) ? typeSelect.value : 'car';
+      populateVehicleModelList(catKey);
+    }
+
+    // Initialize vehicle list on page load
+    document.addEventListener('DOMContentLoaded', initVehicleModels);
+    initVehicleModels();
+    setTimeout(initVehicleModels, 50);
+
+    // Theme is permanently fixed to Ferrari F40 Red
+    document.documentElement.setAttribute('data-theme', 'red');
+    function setTheme() {
+      document.documentElement.setAttribute('data-theme', 'red');
+      const logoImg = document.getElementById('brand-img-logo');
+      if (logoImg) logoImg.src = 'tyrz_logo_red.jpg';
+    }
+
+    function selectPos(btn, pos) {
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSelectedPosition = pos;
+      if (typeof render4TyreMonitor === 'function') render4TyreMonitor();
+    }
+
+    function focusScanner() {
+      document.getElementById('scan-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function triggerFileInput() {
+      document.getElementById('tyre-file-input').click();
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        uploadedImageBase64 = evt.target.result;
+        document.getElementById('uploaded-preview-img').src = uploadedImageBase64;
+        document.getElementById('scanning-img-target').src = uploadedImageBase64;
+        document.getElementById('upload-prompt-view').style.display = 'none';
+        document.getElementById('camera-view').style.display = 'none';
+        document.getElementById('image-preview-view').style.display = 'block';
+        drawCanvasOverlay();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+      document.getElementById('upload-prompt-view').style.display = 'block';
+      document.getElementById('image-preview-view').style.display = 'none';
+      document.getElementById('camera-view').style.display = 'none';
+      stopCamera();
+    }
+
+    // Camera Support
+    async function startCamera() {
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const video = document.getElementById('webcam-feed');
+        video.srcObject = currentStream;
+        document.getElementById('upload-prompt-view').style.display = 'none';
+        document.getElementById('camera-view').style.display = 'block';
+      } catch (err) {
+        alert('Camera access unavailable. Please upload a file instead.');
+      }
+    }
+
+    function stopCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      document.getElementById('camera-view').style.display = 'none';
+      document.getElementById('upload-prompt-view').style.display = 'block';
+    }
+
+    function captureCameraPhoto() {
+      const video = document.getElementById('webcam-feed');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      uploadedImageBase64 = canvas.toDataURL('image/png');
+      document.getElementById('uploaded-preview-img').src = uploadedImageBase64;
+      document.getElementById('scanning-img-target').src = uploadedImageBase64;
+      stopCamera();
+      document.getElementById('upload-prompt-view').style.display = 'none';
+      document.getElementById('image-preview-view').style.display = 'block';
+      drawCanvasOverlay();
+    }
+
+    // Drag & Drop
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        document.getElementById('tyre-file-input').files = e.dataTransfer.files;
+        handleFileSelect({ target: { files: e.dataTransfer.files } });
+      }
+    });
+
+    // Run AI Analysis — Connected to ML / Computer Vision Backend
+    async function runAIAnalysis(e) {
+      e.preventDefault();
+      const modal = document.getElementById('ai-scan-modal');
+      modal.classList.add('active');
+
+      const stepDetect  = document.getElementById('step-detect');
+      const stepQuality = document.getElementById('step-quality');
+      const stepDepth   = document.getElementById('step-depth');
+      const stepLife    = document.getElementById('step-life');
+
+      // Reset step indicators
+      [stepDetect, stepQuality, stepDepth, stepLife].forEach(el => {
+        if (el) el.classList.remove('done');
+      });
+
+      if (stepDetect) stepDetect.innerText = '⏳ Initializing computer vision detection...';
+
+      // Gather vehicle and tyre telemetry metadata
+      const brand = document.getElementById('tyre-brand').value || 'Pirelli P Zero';
+      const size  = document.getElementById('tyre-size').value || '335/35 ZR17';
+      const vtype = document.getElementById('veh-type').value || 'Car';
+      const vmod  = document.getElementById('veh-model').value || 'Ferrari F40';
+      const odo   = document.getElementById('veh-odometer').value || 28500;
+      const calib = document.getElementById('calib-ref-type') ? document.getElementById('calib-ref-type').value : 'coin';
+
+      // Identify active pilot session
+      let userEmail = 'pilot.f40@ferrari.io';
+      let username = '';
+      let userId = '';
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || localStorage.getItem('tyrz_active_user'));
+        if (u) {
+          if (u.email) userEmail = u.email;
+          if (u.username) username = u.username;
+          if (u.id || u._id) userId = u.id || u._id;
+        }
+      } catch(err) {}
+
+      const payload = {
+        image: uploadedImageBase64 || "sample_f40_tyre_tread",
+        metadata: {
+          tireMake: brand,
+          tireSize: size,
+          position: currentSelectedPosition || 'FL',
+          vehicleType: vtype,
+          vehicleModel: vmod,
+          odometerKm: odo,
+          calibType: calib,
+          userEmail: userEmail,
+          username: username,
+          userId: userId
+        }
+      };
+
+      try {
+        // Step 1: Tyre detection
+        setTimeout(() => {
+          if (stepDetect) {
+            stepDetect.innerText = '✓ Tyre & tread boundaries segmented';
+            stepDetect.classList.add('done');
+          }
+          if (stepQuality) stepQuality.innerText = '⏳ Verifying scale reference (' + (calib === 'card' ? 'Card ~85.6mm' : 'Coin ~19-25mm') + ')...';
+        }, 500);
+
+        // Fetch analysis from resilient ML endpoint
+        const res = await apiFetch('/api/analyze', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        // Step 2: Quality & Reference
+        setTimeout(() => {
+          if (stepQuality) {
+            stepQuality.innerText = '✓ Reference calibration locked (' + (data.metadata?.calibrationFactor || '0.14') + ' mm/px)';
+            stepQuality.classList.add('done');
+          }
+          if (stepDepth) stepDepth.innerText = '⏳ Estimating tread groove depth...';
+        }, 1100);
+
+        // Step 3: Depth calculated
+        setTimeout(() => {
+          if (stepDepth) {
+            stepDepth.innerText = '✓ Tread depth calculated: ' + data.tread_depth_mm + ' mm';
+            stepDepth.classList.add('done');
+          }
+          if (stepLife) stepLife.innerText = '⏳ Computing wear trajectory to 1.6mm legal limit...';
+        }, 1700);
+
+        // Step 4: Life & safety
+        setTimeout(() => {
+          if (stepLife) {
+            stepLife.innerText = '✓ Remaining life: ' + data.remaining_km.toLocaleString() + ' km (' + data.condition + ')';
+            stepLife.classList.add('done');
+          }
+        }, 2300);
+
+        // Complete and render results
+        setTimeout(() => {
+          modal.classList.remove('active');
+
+          // Reveal output sections now that scan output is ready
+          const placeholder = document.getElementById('awaiting-scan-placeholder');
+          if (placeholder) placeholder.style.display = 'none';
+          const outputContainer = document.getElementById('analysis-output-container');
+          if (outputContainer) outputContainer.style.display = 'block';
+
+          applyAnalysisResults(data, brand);
+          drawCanvasOverlay();
+          document.getElementById('report-section').scrollIntoView({ behavior: 'smooth' });
+          loadHistory();
+        }, 3000);
+
+      } catch (err) {
+        console.warn("Backend API error, falling back locally:", err);
+        setTimeout(() => {
+          modal.classList.remove('active');
+
+          const placeholder = document.getElementById('awaiting-scan-placeholder');
+          if (placeholder) placeholder.style.display = 'none';
+          const outputContainer = document.getElementById('analysis-output-container');
+          if (outputContainer) outputContainer.style.display = 'block';
+
+          document.getElementById('report-section').scrollIntoView({ behavior: 'smooth' });
+          saveScanToHistory();
+        }, 2800);
+      }
+    }
+
+    // Apply Live ML Scan Results to Telemetry Report
+    function applyAnalysisResults(data, brand) {
+      const depth = data.tread_depth_mm;
+      const km = data.remaining_km;
+      const cond = data.condition;
+      const safe = data.safe;
+      const conf = Math.round((data.confidence || 0.92) * 100);
+
+      // Report Gauge Card
+      const reportDepth = document.getElementById('report-depth-val');
+      if (reportDepth) reportDepth.textContent = depth;
+
+      const badge = document.getElementById('report-condition-badge');
+      if (badge) {
+        badge.textContent = cond;
+        badge.className = 'condition-badge ' + (depth >= 4.0 ? 'good' : (depth >= 2.5 ? 'warning' : 'danger'));
+      }
+
+      const gaugeFill = document.getElementById('gauge-fill-bar');
+      const gaugePin  = document.getElementById('gauge-pin');
+      const pct = Math.min(100, Math.max(5, (depth / 8.0) * 100));
+      if (gaugeFill) gaugeFill.style.width = pct + '%';
+      if (gaugePin)  gaugePin.style.left = pct + '%';
+
+      const kmVal = document.getElementById('report-km-val');
+      if (kmVal) kmVal.textContent = 'Approximately ' + km.toLocaleString() + ' km until 1.6 mm legal limit';
+
+      // Parameter Table
+      const tblDepth   = document.getElementById('tbl-depth');
+      const tblWear    = document.getElementById('tbl-wear-pct');
+      const tblUsable  = document.getElementById('tbl-usable-tread');
+      const tblCond    = document.getElementById('tbl-condition');
+      const tblKm      = document.getElementById('tbl-km');
+      const tblConf    = document.getElementById('tbl-confidence');
+
+      if (tblDepth)  tblDepth.textContent = depth + ' mm';
+      if (tblWear)   tblWear.textContent = Math.max(0, Math.min(100, Math.round(((8.0 - depth) / 6.4) * 100))) + '%';
+      const usable = Math.max(0, depth - 1.6).toFixed(1);
+      if (tblUsable) tblUsable.textContent = usable + ' mm (1.6 mm Legal Safety Cutoff)';
+      if (tblCond) {
+        tblCond.textContent = cond;
+        tblCond.style.color = depth >= 4.0 ? 'var(--success)' : (depth >= 2.5 ? 'var(--warning)' : 'var(--danger)');
+      }
+      if (tblKm)   tblKm.textContent = km.toLocaleString() + ' km';
+      if (tblConf) tblConf.textContent = conf + '% (Optical Scale Calibrated)';
+
+      const vizDepth = document.getElementById('viz-detected-depth');
+      if (vizDepth) vizDepth.textContent = depth + ' mm';
+
+      // Safety Advisory Box
+      const safetyTitle = document.getElementById('safety-status-title');
+      const safetyDesc  = document.getElementById('safety-status-desc');
+      if (safetyTitle) {
+        safetyTitle.textContent = safe ? 'Current Status: Safe (' + cond + ')' : 'Current Status: ⚠️ Action Required (Near Legal Limit)';
+        safetyTitle.style.color = safe ? 'var(--success)' : 'var(--danger)';
+      }
+      if (safetyDesc) {
+        safetyDesc.textContent = safe
+          ? 'Your estimated tread depth of ' + depth + ' mm is above the 1.6 mm legal safety limit. Continue monitoring tread wear regularly every 5,000 km.'
+          : 'WARNING: Your tyre tread is at or below ' + depth + ' mm (legal limit: 1.6 mm). Wet grip, braking distance, and aquaplaning safety are severely degraded. Immediate replacement is strongly advised.';
+      }
+
+      // Update Dynamic Wear Trajectory Graph
+      updateWearChart(depth, km);
+
+      // Update 4-Tyre Monitor State & Uneven Wear Analysis
+      updateVehicleTyreScan(currentSelectedPosition, brand, depth, cond);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DYNAMIC TYRE WEAR TRAJECTORY CHART ENGINE
+    // Mathematically locks the telemetry marker directly on the wear curve
+    // ═══════════════════════════════════════════════════════════════
+    function updateWearChart(depthMm, remainingKm) {
+      const d = Math.max(1.6, Math.min(8.0, parseFloat(depthMm) || 4.8));
+      // Normalized wear parameter t (0 = new 8.0mm, 1 = legal limit 1.6mm)
+      const t = Math.max(0, Math.min(1, (8.0 - d) / 6.4));
+
+      // Mathematically exact point on Quadratic Bezier:
+      // P0 = (80, 45) [8.0 mm], P1 = (380, 110), P2 = (740, 221) [1.6 mm]
+      const cx = (1 - t) * (1 - t) * 80 + 2 * (1 - t) * t * 380 + t * t * 740;
+      const cy = (1 - t) * (1 - t) * 45 + 2 * (1 - t) * t * 110 + t * t * 221;
+
+      const dot       = document.getElementById('chart-marker-dot');
+      const pulse     = document.getElementById('chart-marker-pulse');
+      const line      = document.getElementById('chart-tracking-line');
+      const badge     = document.getElementById('chart-marker-badge');
+      const badgeText = document.getElementById('chart-badge-text');
+      const kmText    = document.getElementById('graph-remaining-km-text');
+
+      if (dot) {
+        dot.setAttribute('cx', cx.toFixed(1));
+        dot.setAttribute('cy', cy.toFixed(1));
+      }
+      if (pulse) {
+        pulse.setAttribute('cx', cx.toFixed(1));
+        pulse.setAttribute('cy', cy.toFixed(1));
+      }
+      if (line) {
+        line.setAttribute('x1', cx.toFixed(1));
+        line.setAttribute('y1', cy.toFixed(1));
+        line.setAttribute('x2', cx.toFixed(1));
+      }
+      if (badge) {
+        const badgeY = cy < 85 ? (cy + 34) : (cy - 28);
+        badge.setAttribute('transform', `translate(${cx.toFixed(1)}, ${badgeY.toFixed(1)})`);
+      }
+      if (badgeText) {
+        badgeText.textContent = `Current: ${d.toFixed(1)} mm`;
+      }
+      if (kmText && remainingKm) {
+        kmText.textContent = `${Number(remainingKm).toLocaleString()} km`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 4-TYRE CHASSIS MONITOR ENGINE
+    // Live tracking across FL, FR, RL, RR with uneven wear diagnostics
+    // ═══════════════════════════════════════════════════════════════
+    const defaultTyresState = {
+      FL: { posName: 'Front Left',  brand: 'Pirelli P Zero', depth: 5.8, condition: '🟢 Good', lastScan: '29 Sep 2026' },
+      FR: { posName: 'Front Right', brand: 'Pirelli P Zero', depth: 5.6, condition: '🟢 Good', lastScan: '29 Sep 2026' },
+      RL: { posName: 'Rear Left',   brand: 'Pirelli P Zero', depth: 3.4, condition: '🟡 Moderate Wear', lastScan: '29 Sep 2026' },
+      RR: { posName: 'Rear Right',  brand: 'Pirelli P Zero', depth: 3.2, condition: '🟡 Moderate Wear', lastScan: '29 Sep 2026' },
+      F:  { posName: 'Front Wheel', brand: 'Pirelli Diablo Rosso IV', depth: 4.5, condition: '🟢 Good', lastScan: 'Today' },
+      R:  { posName: 'Rear Wheel',  brand: 'Pirelli Diablo Rosso IV', depth: 2.8, condition: '🟡 Moderate Wear', lastScan: 'Today' },
+      L1: { posName: 'Steer Axle Left (L1)', brand: 'Michelin X Multi', depth: 14.5, condition: '🟢 Good', lastScan: 'Today' },
+      R1: { posName: 'Steer Axle Right (R1)', brand: 'Michelin X Multi', depth: 14.2, condition: '🟢 Good', lastScan: 'Today' },
+      L2: { posName: 'Drive Axle Outer Left (L2)', brand: 'Bridgestone Ecopia', depth: 8.8, condition: '🟡 Moderate Wear', lastScan: 'Today' },
+      R2: { posName: 'Drive Axle Outer Right (R2)', brand: 'Bridgestone Ecopia', depth: 8.5, condition: '🟡 Moderate Wear', lastScan: 'Today' },
+      L3: { posName: 'Trailer Axle Left (L3)', brand: 'Continental HSR2', depth: 12.0, condition: '🟢 Good', lastScan: 'Today' },
+      R3: { posName: 'Trailer Axle Right (R3)', brand: 'Continental HSR2', depth: 11.8, condition: '🟢 Good', lastScan: 'Today' }
+    };
+
+    function getVehicleTyres() {
+      try {
+        const saved = localStorage.getItem('tyrz_vehicle_tyres');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      // No real user data yet — return null so the monitor shows an empty state
+      return null;
+    }
+
+    function saveVehicleTyres(state) {
+      try {
+        localStorage.setItem('tyrz_vehicle_tyres', JSON.stringify(state));
+        localStorage.setItem('tyrz_user_scan_count', '1');
+      } catch (e) {}
+    }
+
+    function updateVehicleTyreScan(pos, brand, depth, condition) {
+      try {
+        localStorage.setItem('tyrz_user_scan_count', '1');
+      } catch (e) {}
+      const tyres = getVehicleTyres() || {};
+      const posMap = {
+        FL: 'Front Left', FR: 'Front Right', RL: 'Rear Left', RR: 'Rear Right',
+        F: 'Front Wheel', R: 'Rear Wheel',
+        L1: 'Steer Axle Left (L1)', R1: 'Steer Axle Right (R1)',
+        L2: 'Drive Axle Outer Left (L2)', R2: 'Drive Axle Outer Right (R2)',
+        L3: 'Trailer Axle Left (L3)', R3: 'Trailer Axle Right (R3)'
+      };
+      tyres[pos] = {
+        posName: posMap[pos] || pos,
+        brand: brand || 'Pirelli P Zero',
+        depth: parseFloat(depth) || 4.8,
+        condition: condition || '🟢 Good',
+        lastScan: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      };
+      saveVehicleTyres(tyres);
+      render4TyreMonitor();
+    }
+
+    function render4TyreMonitor() {
+      const dashboardSec = document.getElementById('dashboard-section');
+      const hasScans = localStorage.getItem('tyrz_user_scan_count');
+      const tyres = getVehicleTyres();
+
+      // Only appear if the user has given input / recorded a scan
+      if (!hasScans || !tyres || Object.keys(tyres).length === 0) {
+        if (dashboardSec) dashboardSec.style.display = 'none';
+        return;
+      }
+
+      if (dashboardSec) dashboardSec.style.display = 'block';
+      const container = document.getElementById('chassis-grid-container');
+      if (!container) return;
+
+      const catKey = document.getElementById('veh-type')?.value || 'car';
+      const cat = (typeof TyrzVehicleDataset !== 'undefined') ? TyrzVehicleDataset.getCategory(catKey) : null;
+      
+      const categoryWheelMap = {
+        bike: [
+          { key: 'F', label: 'Front Wheel', fallbackBrand: 'Pirelli Diablo Rosso IV', fallbackDepth: 4.5 },
+          { key: 'R', label: 'Rear Wheel',  fallbackBrand: 'Pirelli Diablo Rosso IV', fallbackDepth: 2.8 }
+        ],
+        truck: [
+          { key: 'L1', label: 'Steer Axle Left (L1)',       fallbackBrand: 'Michelin X Multi', fallbackDepth: 14.5 },
+          { key: 'R1', label: 'Steer Axle Right (R1)',      fallbackBrand: 'Michelin X Multi', fallbackDepth: 14.2 },
+          { key: 'L2', label: 'Drive Axle Outer Left (L2)', fallbackBrand: 'Bridgestone Ecopia', fallbackDepth: 8.8 },
+          { key: 'R2', label: 'Drive Axle Outer Right (R2)', fallbackBrand: 'Bridgestone Ecopia', fallbackDepth: 8.5 },
+          { key: 'L3', label: 'Trailer Axle Left (L3)',     fallbackBrand: 'Continental HSR2', fallbackDepth: 12.0 },
+          { key: 'R3', label: 'Trailer Axle Right (R3)',    fallbackBrand: 'Continental HSR2', fallbackDepth: 11.8 }
+        ],
+        bus: [
+          { key: 'FL', label: 'Front Left Steer',  fallbackBrand: 'Michelin X Coach', fallbackDepth: 12.0 },
+          { key: 'FR', label: 'Front Right Steer', fallbackBrand: 'Michelin X Coach', fallbackDepth: 11.8 },
+          { key: 'RL', label: 'Rear Left Drive',   fallbackBrand: 'Michelin X Coach', fallbackDepth: 9.5 },
+          { key: 'RR', label: 'Rear Right Drive',  fallbackBrand: 'Michelin X Coach', fallbackDepth: 9.2 }
+        ]
+      };
+
+      const defaultFourPositions = [
+        { key: 'FL', label: 'Front Left',  fallbackBrand: 'Pirelli P Zero', fallbackDepth: 5.8 },
+        { key: 'FR', label: 'Front Right', fallbackBrand: 'Pirelli P Zero', fallbackDepth: 5.6 },
+        { key: 'RL', label: 'Rear Left',   fallbackBrand: 'Pirelli P Zero', fallbackDepth: 3.4 },
+        { key: 'RR', label: 'Rear Right',  fallbackBrand: 'Pirelli P Zero', fallbackDepth: 3.2 }
+      ];
+
+      const positions = categoryWheelMap[catKey] || (
+        (cat && cat.positions)
+          ? cat.positions.map(p => ({ key: p.code, label: p.label, fallbackBrand: (cat.commonBrands && cat.commonBrands[0]) || 'Pirelli P Zero', fallbackDepth: 5.0 }))
+          : defaultFourPositions
+      );
+
+      // Dynamic Title, Icon and Wheel count
+      const sectionTitle = document.querySelector('#dashboard-section .section-title');
+      const sectionSubtitle = document.querySelector('#dashboard-section .section-subtitle');
+      const count = positions.length;
+      const icon = (cat && cat.icon) ? cat.icon : (CATEGORY_ICONS[catKey] || '🚗');
+
+      if (sectionTitle) {
+        sectionTitle.innerHTML = `${icon} My Vehicle — ${count} Tyre Monitor`;
+      }
+      if (sectionSubtitle) {
+        sectionSubtitle.textContent = count === 2
+          ? 'Track health across both tyres to detect uneven wear early.'
+          : (count === 6
+            ? 'Track health across all six tyres to detect uneven wear early.'
+            : 'Track health across all four tyres to detect uneven wear early.');
+      }
+
+      // Responsive Grid styling based on wheel count
+      if (count === 2) {
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        container.style.maxWidth = '720px';
+        container.style.margin = '0 auto';
+      } else if (count === 6) {
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        container.style.maxWidth = '1050px';
+        container.style.margin = '0 auto';
+      } else {
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        container.style.maxWidth = '720px';
+        container.style.margin = '0 auto';
+      }
+
+      container.innerHTML = '';
+      let totalDepth = 0;
+      let scannedCount = 0;
+
+      positions.forEach(p => {
+        const tyre = tyres && tyres[p.key];
+        const isCurrent = (currentSelectedPosition === p.key);
+        const card = document.createElement('div');
+        card.setAttribute('onclick', `quickSelectTyrePosition('${p.key}')`);
+
+        const hasValidScan = tyre && tyre.depth != null && !isNaN(parseFloat(tyre.depth));
+
+        if (hasValidScan) {
+          const depth = parseFloat(tyre.depth);
+          totalDepth += depth;
+          scannedCount++;
+
+          let statusClass = 'good';
+          let statusColor = 'var(--success)';
+          let statusBadge = '🟢';
+          const minLegal = (cat && cat.legalMinMm) ? cat.legalMinMm : (catKey === 'bike' ? 1.0 : 1.6);
+          const warnThresh = (cat && cat.warningThresholdMm) ? cat.warningThresholdMm : (catKey === 'bike' ? 2.0 : 3.0);
+
+          if (depth < minLegal + 0.4) {
+            statusClass = 'danger';
+            statusColor = 'var(--danger)';
+            statusBadge = '🔴';
+          } else if (depth <= warnThresh) {
+            statusClass = 'warning';
+            statusColor = 'var(--warning)';
+            statusBadge = '🟡';
+          }
+
+          card.className = `tyre-card-pos ${statusClass} ${isCurrent ? 'active-target' : ''}`;
+          card.title = `Scanned: ${depth.toFixed(1)} mm. Click to re-scan ${p.label}`;
+          card.innerHTML = `
+            <div>
+              <div style="font-weight: 700; font-size: 1.05rem; color: #fff;">${p.label}</div>
+              <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 4px;">${tyre.brand || 'Scanned Tyre'}</div>
+            </div>
+            <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1.25rem; color: ${statusColor}; text-align: right;">
+              ${statusBadge} ${depth.toFixed(1)} mm
+            </div>
+          `;
+        } else {
+          // NOT SCANNED YET — clean placeholder, no fake numbers or brands
+          card.className = `tyre-card-pos unscanned ${isCurrent ? 'active-target' : ''}`;
+          card.title = `Click to calibrate & scan ${p.label}`;
+          card.innerHTML = `
+            <div>
+              <div style="font-weight: 700; font-size: 1.05rem; color: rgba(255,255,255,0.7);">${p.label}</div>
+              <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">📷 Tap to scan</div>
+            </div>
+            <div style="font-family: var(--font-mono); font-weight: 600; font-size: 0.92rem; color: var(--text-dim); text-align: right;">
+              ⚪ Not Scanned
+            </div>
+          `;
+        }
+
+        container.appendChild(card);
+      });
+
+      // Average Depth update (strictly calculated from actual scanned tyres)
+      const avgEl = document.getElementById('chassis-avg-tread');
+      if (avgEl) {
+        if (scannedCount > 0) {
+          const avg = (totalDepth / scannedCount).toFixed(1);
+          avgEl.textContent = scannedCount === positions.length
+            ? `Avg Depth: ${avg} mm`
+            : `Avg Depth: ${avg} mm (${scannedCount} of ${positions.length} scanned)`;
+        } else {
+          avgEl.textContent = 'Avg Depth: — mm';
+        }
+      }
+
+      // Update vehicle label if user changed model input
+      const vehEl = document.getElementById('chassis-veh-name');
+      const inputVeh = document.getElementById('veh-model')?.value || document.getElementById('veh-model-select')?.value;
+      if (vehEl && inputVeh && inputVeh !== '__custom__') {
+        vehEl.textContent = inputVeh;
+      } else if (vehEl && cat) {
+        vehEl.textContent = cat.name;
+      }
+
+      // Dynamic Uneven Wear Diagnostics (requires actual scanned data)
+      const alertEl = document.getElementById('chassis-wear-alert');
+      if (alertEl) {
+        if (count === 2) {
+          // Motorcycle / Scooter: Front vs Rear differential
+          const fScanned = tyres && tyres.F && tyres.F.depth != null && !isNaN(parseFloat(tyres.F.depth));
+          const rScanned = tyres && tyres.R && tyres.R.depth != null && !isNaN(parseFloat(tyres.R.depth));
+
+          if (fScanned && rScanned) {
+            const f = parseFloat(tyres.F.depth);
+            const r = parseFloat(tyres.R.depth);
+            const diff = Math.abs(f - r);
+
+            if (diff >= 1.0) {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--warning)';
+              alertEl.style.background = 'rgba(255, 171, 0, 0.12)';
+              alertEl.style.color = 'var(--warning)';
+              alertEl.innerHTML = `⚠️ <strong>Motorcycle Wear Variance:</strong> Rear tyre at <strong>${r.toFixed(1)} mm</strong> vs Front tyre at <strong>${f.toFixed(1)} mm</strong> (${diff.toFixed(1)} mm variance). Rear tyres wear faster due to acceleration torque.`;
+            } else if (Math.min(f, r) < 1.5) {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--danger)';
+              alertEl.style.background = 'rgba(255, 23, 68, 0.14)';
+              alertEl.style.color = '#ff6b6b';
+              alertEl.innerHTML = `🚨 <strong>Safety Critical:</strong> Tread depth is near the 1.0 mm motorcycle safety cutoff! Immediate tyre replacement required.`;
+            } else {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--success)';
+              alertEl.style.background = 'rgba(0, 230, 118, 0.08)';
+              alertEl.style.color = 'var(--success)';
+              alertEl.innerHTML = `✅ <strong>Balanced Wear:</strong> Front and rear tyres exhibit balanced tread wear (${diff.toFixed(1)} mm variance).`;
+            }
+          } else if (fScanned || rScanned) {
+            const unscannedName = fScanned ? 'Rear Wheel' : 'Front Wheel';
+            const scannedName = fScanned ? 'Front Wheel' : 'Rear Wheel';
+            const scannedVal = fScanned ? parseFloat(tyres.F.depth) : parseFloat(tyres.R.depth);
+            alertEl.style.display = 'block';
+            alertEl.style.borderColor = 'var(--border-strong)';
+            alertEl.style.background = 'rgba(12, 6, 8, 0.7)';
+            alertEl.style.color = 'var(--text-dim)';
+            alertEl.innerHTML = `ℹ️ <strong>${scannedName} recorded at ${scannedVal.toFixed(1)} mm:</strong> Scan the <strong>${unscannedName}</strong> above to unlock comparative front-to-rear wear differential diagnostics.`;
+          } else {
+            alertEl.style.display = 'none';
+          }
+        } else {
+          // 4-Wheel / Multi-Axle: Front vs Rear comparison
+          const hasFL = tyres && tyres.FL && tyres.FL.depth != null && !isNaN(parseFloat(tyres.FL.depth));
+          const hasFR = tyres && tyres.FR && tyres.FR.depth != null && !isNaN(parseFloat(tyres.FR.depth));
+          const hasRL = tyres && tyres.RL && tyres.RL.depth != null && !isNaN(parseFloat(tyres.RL.depth));
+          const hasRR = tyres && tyres.RR && tyres.RR.depth != null && !isNaN(parseFloat(tyres.RR.depth));
+
+          if (hasFL && hasFR && hasRL && hasRR) {
+            const fl = parseFloat(tyres.FL.depth);
+            const fr = parseFloat(tyres.FR.depth);
+            const rl = parseFloat(tyres.RL.depth);
+            const rr = parseFloat(tyres.RR.depth);
+
+            const frontAvg = (fl + fr) / 2;
+            const rearAvg  = (rl + rr) / 2;
+            const diff = Math.abs(frontAvg - rearAvg);
+
+            if (diff >= 1.5) {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--warning)';
+              alertEl.style.background = 'rgba(255, 171, 0, 0.12)';
+              alertEl.style.color = 'var(--warning)';
+              alertEl.innerHTML = `⚠️ <strong>Uneven Wear Detected:</strong> Rear tyres average <strong>${rearAvg.toFixed(1)} mm</strong> compared to Front tyres at <strong>${frontAvg.toFixed(1)} mm</strong> (${diff.toFixed(1)} mm variance). Tyre rotation recommended!`;
+            } else if (Math.min(fl, fr, rl, rr) < 2.0) {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--danger)';
+              alertEl.style.background = 'rgba(255, 23, 68, 0.14)';
+              alertEl.style.color = '#ff6b6b';
+              alertEl.innerHTML = `🚨 <strong>Safety Critical:</strong> One or more tyres are near the 1.6 mm legal limit! Immediate replacement required.`;
+            } else {
+              alertEl.style.display = 'block';
+              alertEl.style.borderColor = 'var(--success)';
+              alertEl.style.background = 'rgba(0, 230, 118, 0.08)';
+              alertEl.style.color = 'var(--success)';
+              alertEl.innerHTML = `✅ <strong>Balanced Wear:</strong> All tyres exhibit uniform tread wear (${diff.toFixed(1)} mm variance).`;
+            }
+          } else if (scannedCount > 0) {
+            alertEl.style.display = 'block';
+            alertEl.style.borderColor = 'var(--border-strong)';
+            alertEl.style.background = 'rgba(12, 6, 8, 0.7)';
+            alertEl.style.color = 'var(--text-dim)';
+            alertEl.innerHTML = `ℹ️ <strong>${scannedCount} of ${positions.length} tyres scanned:</strong> Scan remaining tyres to unlock full vehicle axle wear analysis and rotation alerts.`;
+          } else {
+            alertEl.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    function quickSelectTyrePosition(pos) {
+      currentSelectedPosition = pos;
+      // Sync buttons in Step 1
+      document.querySelectorAll('.position-options .pos-btn').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        if (onclickAttr.includes(`'${pos}'`)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      render4TyreMonitor();
+
+      // Scroll smoothly up to scanner section
+      const scanSec = document.getElementById('scan-section');
+      if (scanSec) {
+        scanSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Live sync chassis monitor with MongoDB chassis backend
+    async function syncChassisWithBackend() {
+      try {
+        if (!localStorage.getItem('tyrz_user_scan_count')) return;
+        const tyres = getVehicleTyres();
+        if (!tyres) return;
+        const res = await apiFetch('/api/chassis');
+        if (!res.ok) return;
+        const chassis = await res.json();
+        if (chassis && Object.keys(chassis).length > 0) {
+          const allPositions = ['FL', 'FR', 'RL', 'RR', 'F', 'R', 'L1', 'R1', 'L2', 'R2', 'L3', 'R3'];
+          let updated = false;
+          allPositions.forEach(pos => {
+            if (chassis[pos] && chassis[pos].treadDepthMm != null && tyres[pos]) {
+              const depth = parseFloat(chassis[pos].treadDepthMm);
+              const cond = depth >= 4.0 ? '🟢 Good' : (depth >= 2.0 ? '🟡 Moderate Wear' : '🔴 Critical');
+              tyres[pos].depth = depth;
+              tyres[pos].condition = cond;
+              tyres[pos].lastScan = 'MongoDB Live';
+              updated = true;
+            }
+          });
+          if (updated) {
+            saveVehicleTyres(tyres);
+            render4TyreMonitor();
+          }
+        }
+      } catch (e) {}
+    }
+
+    syncChassisWithBackend();
+
+    // Canvas Visualization
+    function drawCanvasOverlay() {
+      const canvas = document.getElementById('tread-viz-canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = uploadedImageBase64;
+      img.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        if (currentVizMode === 'contour') {
+          // Draw green/red depth bounding contour boxes
+          ctx.strokeStyle = '#00e676';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(60, 40, 480, 260);
+
+          ctx.strokeStyle = 'rgba(230,0,0,0.8)';
+          ctx.setLineDash([6, 4]);
+          ctx.strokeRect(120, 80, 360, 180);
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = 'rgba(0, 230, 118, 0.9)';
+          ctx.font = 'bold 14px "JetBrains Mono"';
+          const depthVal = document.getElementById('report-depth-val')?.textContent || '4.8';
+          ctx.fillText(`Detected Tread Region → ${depthVal} mm`, 70, 70);
+        } else if (currentVizMode === 'heatmap') {
+          // Heatmap overlay
+          const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          grad.addColorStop(0, 'rgba(255, 23, 68, 0.35)');
+          grad.addColorStop(0.5, 'rgba(255, 171, 0, 0.35)');
+          grad.addColorStop(1, 'rgba(0, 230, 118, 0.35)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(60, 40, 480, 260);
+
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px "JetBrains Mono"';
+          ctx.fillText('🔥 Thermal Wear Profile Active', 70, 70);
+        }
+      };
+    }
+
+    function setVizMode(mode) {
+      currentVizMode = mode;
+      document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      drawCanvasOverlay();
+    }
+
+    // History Storage — Authenticated User Isolation & Direct Database Sync
+    async function loadHistory() {
+      const tbody = document.getElementById('history-tbody');
+      if (!tbody) return;
+
+      // Immediately clear the table to prevent any cross-user stale records from flashing
+      tbody.innerHTML = '';
+
+      let activeUser = null;
+      try {
+        activeUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('tyrz_active_user'));
+      } catch (e) {}
+
+      const pilotName = activeUser?.name || activeUser?.fullName || activeUser?.username || 'Pilot';
+      const token = localStorage.getItem('token');
+
+      // Unauthenticated check
+      if (!activeUser && !token) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--text-dim); font-size: 0.95rem;">
+              🔒 Please <a href="index.html" style="color: var(--accent); text-decoration: underline; font-weight: 600;">log in to your account</a> to access your tyre scan history.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      try {
+        // Authenticated request to backend - strictly verified via JWT session token (no user query parameters)
+        const res = await apiFetch('/api/history?limit=25');
+
+        if (res.status === 401) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--danger); font-size: 0.95rem;">
+                ⚠️ Session expired. Please <a href="index.html" style="color: var(--accent); text-decoration: underline; font-weight: 600;">log in again</a>.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          tbody.innerHTML = '';
+          if (data.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 44px 16px; color: var(--text-dim); font-size: 0.95rem;">
+                  🏎️ No previous scans recorded for <strong style="color: var(--text);">${pilotName}</strong>.<br>
+                  <span style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; display: inline-block;">
+                    Perform your first tyre scan above to record telemetry history.
+                  </span>
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          data.forEach(item => {
+            const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (item.date || 'Today');
+            const veh = item.metadata ? `${item.metadata.tireMake || 'Pirelli P Zero'} (${item.metadata.position || 'FL'})` : (item.vehicle || 'Ferrari F40');
+            const depth = (item.treadDepthMm != null ? item.treadDepthMm + ' mm' : item.depth);
+            const cond = item.condition || (item.safe ? '🟢 Good' : '🔴 Replace');
+            const rem = item.remainingKm != null ? item.remainingKm.toLocaleString() + ' km' : item.remaining;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${dateStr}</td>
+              <td>${veh}</td>
+              <td style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${depth}</td>
+              <td>${cond}</td>
+              <td style="font-family: var(--font-mono);">${rem}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('Failed to load history from backend:', err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 36px 16px; color: var(--text-dim); font-size: 0.92rem;">
+              ⚠️ Unable to load scan history. Please ensure backend server is running.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function saveScanToHistory() {
+      // Scans are automatically saved to backend DB via /api/analyze with verified owner identity.
+      // Refresh the table from the secure backend.
+      loadHistory();
+    }
+
+    function checkActiveUser() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const googleUserParam = urlParams.get('google_user');
+        if (googleUserParam) {
+          try {
+            const parsed = JSON.parse(decodeURIComponent(googleUserParam));
+            localStorage.setItem('user', JSON.stringify(parsed));
+            localStorage.setItem('tyrz_active_user', JSON.stringify(parsed));
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch(e) {}
+        }
+
+        const rawUserData = localStorage.getItem('user') || localStorage.getItem('tyrz_active_user');
+        const activeUser = rawUserData ? JSON.parse(rawUserData) : null;
+        const loginBtn = document.getElementById('nav-login-btn');
+        const userBadge = document.getElementById('nav-user-badge');
+        const userNameSlot = document.getElementById('nav-user-name');
+        const welcomeHeading = document.getElementById('welcome');
+
+        if (activeUser && (activeUser.username || activeUser.displayName || activeUser.email)) {
+          const displayName = activeUser.displayName || activeUser.fullName || activeUser.name || activeUser.username;
+          if (loginBtn) loginBtn.style.display = 'none';
+          if (userBadge) userBadge.style.display = 'flex';
+          if (userNameSlot) userNameSlot.textContent = '👤 Pilot: ' + displayName;
+          if (welcomeHeading) welcomeHeading.textContent = 'Welcome, ' + displayName + '!';
+        } else {
+          if (loginBtn) loginBtn.style.display = 'inline-flex';
+          if (userBadge) userBadge.style.display = 'none';
+          if (welcomeHeading) welcomeHeading.textContent = 'Welcome to AI Tyre Health Diagnostics!';
+        }
+      } catch (e) {}
+    }
+
+    async function logoutUser() {
+      try {
+        await apiFetch('/api/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      // Clear sensitive client-side state and remove all cached scan items
+      localStorage.removeItem('user');
+      localStorage.removeItem('tyrz_active_user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('tyrz_scan_history');
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('tyrz_scan_history')) {
+          localStorage.removeItem(key);
+        }
+      });
+      const tbody = document.getElementById('history-tbody');
+      if (tbody) tbody.innerHTML = '';
+      window.location.href = 'index.html';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FERRARI F40 ANIMATED CANVAS BACKGROUND ENGINE
+    // Three-layer system: Speed Lines + Ember Particles + Pulse Rings
+    // ═══════════════════════════════════════════════════════════════
+    (function initF40Canvas() {
+      const canvas = document.getElementById('f40-bg-canvas');
+      const ctx = canvas.getContext('2d');
+
+      let W, H;
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // ── LAYER 1: SPEED LINES ──────────────────────────────────────
+      const SPEED_LINE_COUNT = 120;
+      const speedLines = Array.from({ length: SPEED_LINE_COUNT }, () => createSpeedLine());
+
+      function createSpeedLine() {
+        return {
+          x: Math.random() * 1.5,          // 0-1.5 across width
+          y: Math.random(),
+          len: 0.03 + Math.random() * 0.14, // fraction of width
+          speed: 0.001 + Math.random() * 0.005,
+          alpha: 0.04 + Math.random() * 0.18,
+          width: 0.3 + Math.random() * 1.2,
+          hue: Math.random() < 0.7 ? 0 : 15, // red or warm-orange
+        };
+      }
+
+      function drawSpeedLines(ts) {
+        speedLines.forEach(line => {
+          line.x -= line.speed;
+          if (line.x + line.len < 0) {
+            // recycle from right edge
+            line.x = 1.0 + Math.random() * 0.5;
+            line.y = Math.random();
+            line.len  = 0.03 + Math.random() * 0.14;
+            line.alpha = 0.04 + Math.random() * 0.18;
+            line.speed = 0.001 + Math.random() * 0.005;
+          }
+          const x1 = line.x * W;
+          const x2 = (line.x + line.len) * W;
+          const y  = line.y * H;
+          const grad = ctx.createLinearGradient(x1, y, x2, y);
+          grad.addColorStop(0, `hsla(${line.hue},100%,50%,0)`);
+          grad.addColorStop(0.4, `hsla(${line.hue},100%,60%,${line.alpha})`);
+          grad.addColorStop(1, `hsla(${line.hue},100%,50%,0)`);
+          ctx.beginPath();
+          ctx.moveTo(x1, y);
+          ctx.lineTo(x2, y);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = line.width;
+          ctx.stroke();
+        });
+      }
+
+      // ── LAYER 2: EMBER/SPARK PARTICLES ───────────────────────────
+      const EMBER_COUNT = 80;
+      const embers = Array.from({ length: EMBER_COUNT }, () => createEmber(true));
+
+      function createEmber(scattered) {
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+        return {
+          x: scattered ? Math.random() * W : (side === 'left' ? -10 : W + 10),
+          y: scattered ? Math.random() * H : (0.3 + Math.random() * 0.6) * H,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -0.3 - Math.random() * 1.2,
+          r:  0.8 + Math.random() * 2.5,
+          alpha: 0.6 + Math.random() * 0.4,
+          decay: 0.004 + Math.random() * 0.008,
+          hue: Math.random() < 0.6 ? 0 : (Math.random() < 0.5 ? 15 : 30),
+          twinkle: Math.random() * Math.PI * 2,
+          twinkleSpeed: 0.04 + Math.random() * 0.08,
+          trail: [],
+        };
+      }
+
+      function drawEmbers(ts) {
+        embers.forEach((e, i) => {
+          // Update
+          e.x  += e.vx;
+          e.y  += e.vy;
+          e.vy += 0.01; // slight gravity
+          e.alpha -= e.decay;
+          e.twinkle += e.twinkleSpeed;
+
+          // Store trail
+          e.trail.push({ x: e.x, y: e.y });
+          if (e.trail.length > 8) e.trail.shift();
+
+          if (e.alpha <= 0 || e.y < -20 || e.x < -20 || e.x > W + 20) {
+            embers[i] = createEmber(false);
+            return;
+          }
+
+          const twinkleA = Math.abs(Math.sin(e.twinkle)) * 0.4 + 0.6;
+          const a = e.alpha * twinkleA;
+
+          // Draw trailing tail
+          if (e.trail.length > 1) {
+            for (let t = 1; t < e.trail.length; t++) {
+              const progress = t / e.trail.length;
+              ctx.beginPath();
+              ctx.moveTo(e.trail[t-1].x, e.trail[t-1].y);
+              ctx.lineTo(e.trail[t].x, e.trail[t].y);
+              ctx.strokeStyle = `hsla(${e.hue},100%,65%,${a * progress * 0.5})`;
+              ctx.lineWidth = e.r * progress;
+              ctx.lineCap = 'round';
+              ctx.stroke();
+            }
+          }
+
+          // Draw glow
+          const grd = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.r * 4);
+          grd.addColorStop(0,   `hsla(${e.hue + 20},100%,90%,${a})`);
+          grd.addColorStop(0.3, `hsla(${e.hue},100%,60%,${a * 0.8})`);
+          grd.addColorStop(1,   `hsla(${e.hue},100%,40%,0)`);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r * 4, 0, Math.PI * 2);
+          ctx.fillStyle = grd;
+          ctx.fill();
+
+          // Draw core dot
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(30,100%,95%,${a})`;
+          ctx.fill();
+        });
+      }
+
+      // ── LAYER 3: PULSE RINGS (center-screen heartbeat) ───────────
+      const rings = [];
+      let lastRingTime = 0;
+
+      function spawnRing(ts) {
+        if (ts - lastRingTime > 3000) {
+          lastRingTime = ts;
+          rings.push({ x: W * 0.5, y: H * 0.42, r: 0, maxR: Math.min(W, H) * 0.38, alpha: 0.18 });
+        }
+      }
+
+      function drawRings() {
+        for (let i = rings.length - 1; i >= 0; i--) {
+          const ring = rings[i];
+          ring.r     += 2.2;
+          ring.alpha  = Math.max(0, ring.alpha - 0.001);
+          if (ring.r > ring.maxR || ring.alpha <= 0) { rings.splice(i, 1); continue; }
+          ctx.beginPath();
+          ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(230,0,0,${ring.alpha})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      // ── LAYER 4: SLOW SCAN-LINE SWEEP ────────────────────────────
+      let scanY = 0;
+      function drawScanline() {
+        scanY = (scanY + 0.4) % H;
+        const grad = ctx.createLinearGradient(0, scanY - 60, 0, scanY + 60);
+        grad.addColorStop(0,   'rgba(230,0,0,0)');
+        grad.addColorStop(0.5, 'rgba(230,0,0,0.025)');
+        grad.addColorStop(1,   'rgba(230,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, scanY - 60, W, 120);
+      }
+
+      // ── MAIN ANIMATION LOOP ──────────────────────────────────────
+      function animate(ts) {
+        // Clear with deep fade for motion trails
+        ctx.fillStyle = 'rgba(6, 4, 8, 0.22)';
+        ctx.fillRect(0, 0, W, H);
+
+        drawScanline();
+        drawSpeedLines(ts);
+        drawEmbers(ts);
+        spawnRing(ts);
+        drawRings();
+
+        requestAnimationFrame(animate);
+      }
+
+      requestAnimationFrame(animate);
+    })();
+
+    // Auto-hide navigation bar on scroll down, slide in smoothly on scroll up
+    (function initNavScrollBehavior() {
+      const header = document.querySelector('header.nav-header');
+      if (!header) return;
+
+      let lastScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      let ticking = false;
+      const scrollThreshold = 8; // avoid micro-jitter
+
+      function updateNav() {
+        const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        // Near the top of the page, header is always visible
+        if (currentScrollY <= 40) {
+          header.classList.remove('nav-hidden');
+          lastScrollY = currentScrollY;
+          ticking = false;
+          return;
+        }
+
+        const delta = currentScrollY - lastScrollY;
+
+        if (Math.abs(delta) >= scrollThreshold) {
+          if (delta > 0 && currentScrollY > 80) {
+            // Scrolling down -> smoothly slide navbar up and out
+            header.classList.add('nav-hidden');
+          } else if (delta < 0) {
+            // Scrolling up -> smoothly slide navbar back down into view
+            header.classList.remove('nav-hidden');
+          }
+          lastScrollY = currentScrollY;
+        }
+
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(updateNav);
+          ticking = true;
+        }
+      }, { passive: true });
+    })();
+
+    // Initial Setup
+    window.addEventListener('DOMContentLoaded', () => {
+      checkLandingServerConnection();
+      checkActiveUser();
+      loadHistory();
+      drawCanvasOverlay();
+      updateWearChart(4.8, 28500);
+      render4TyreMonitor();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="red">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ferrari F40 — Tyre Performance & Telemetry Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #040507;
+      --card-bg: rgba(10, 12, 16, 0.92);
+      --accent: #e60000;
+      --accent-glow: rgba(230, 0, 0, 0.45);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f6fa;
+      --text-dim: #9aa1b2;
+      --text-muted: #5d6375;
+      --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       STAGE 1: CINEMATIC FERRARI F40 INTRO (PHOTO 2 WITH ANIMATION)
+    ══════════════════════════════════════════════════════════════════════ */
+    #stage-car {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: #020305;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      opacity: 1;
+      cursor: pointer;
+      transition: opacity 1s ease;
+    }
+
+    #stage-car.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .car-motion-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #car-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      transform: scale(1.18);
+      filter: brightness(0.65) contrast(1.2);
+      animation: kenBurnsF40 4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 1.2s ease;
+    }
+
+    #stage-car.transitioning #car-img {
+      transform: scale(1.35) translateY(-20px);
+      filter: brightness(1.2) blur(8px);
+      opacity: 0;
+    }
+
+    @keyframes kenBurnsF40 {
+      0% {
+        transform: scale(1.18) translateY(-10px);
+        filter: brightness(0.6) contrast(1.25);
+      }
+      100% {
+        transform: scale(1.02) translateY(0px);
+        filter: brightness(0.92) contrast(1.12);
+      }
+    }
+
+
+
+    .stage1-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(2, 3, 5, 0.75) 85%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .stage1-brand-badge {
+      position: absolute;
+      top: 36px;
+      left: 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(10, 12, 16, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 8px 20px 8px 14px;
+      z-index: 10;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .stage1-brand-badge img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .stage1-brand-badge span {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      color: #fff;
+    }
+
+    .stage1-brand-badge span em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .enter-prompt-pill {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 12, 16, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 10px 24px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      z-index: 10;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      animation: bouncePrompt 2s ease-in-out infinite;
+    }
+
+    .enter-prompt-pill span {
+      color: var(--accent);
+    }
+
+    @keyframes bouncePrompt {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-6px); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       STAGE 2: FULL VIEWPORT TELEMETRY & AUTH PANEL
+    ══════════════════════════════════════════════════════════════════════ */
+    #stage-viewport {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: #040507;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      background: linear-gradient(180deg, rgba(4,5,7,0.85) 0%, transparent 100%);
+    }
+
+    .top-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+    }
+
+    .top-logo span { color: var(--accent); }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-replay-intro {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-replay-intro:hover {
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Main Viewport Content */
+    .viewport-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Background Tyre Canvas / Image */
+    .tyre-bg-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .tyre-bg-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left center;
+      filter: brightness(0.85) contrast(1.1);
+      opacity: 0;
+      transform: scale(1.06);
+      transition: opacity 1s ease, transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, opacity;
+    }
+
+    .tyre-bg-container img.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Top Nav entrance */
+    .top-nav {
+      opacity: 0;
+      transform: translateY(-14px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .top-nav.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Floating Auth Card (2nd Login Bar Design) */
+    .auth-card-panel {
+      position: absolute;
+      right: 5%;
+      top: 50%;
+      width: 440px;
+      max-width: 90vw;
+      z-index: 50;
+      background: rgba(8, 10, 14, 0.96);
+      border: 1px solid rgba(230, 0, 0, 0.4);
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(230, 0, 0, 0.18);
+      opacity: 0;
+      transform: translateY(-50%) translateX(70px);
+      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .auth-card-panel.visible {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .auth-title {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .auth-subtitle {
+      color: var(--text-dim);
+      font-size: 0.88rem;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    /* Auth Tab Switches */
+    .auth-tab-switch {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.98rem;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--accent-glow);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #ff1a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px var(--accent-glow);
+    }
+
+    .alert-msg {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+      display: none;
+    }
+
+    .alert-msg.error {
+      background: rgba(255, 23, 68, 0.15);
+      border: 1px solid #ff1744;
+      color: #ff1744;
+    }
+
+    .alert-msg.success {
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid #00e676;
+      color: #00e676;
+    }
+
+
+  </style>
+</head>
+<body>
+
+  <!-- STAGE 1: CINEMATIC FERRARI F40 INTRO (PHOTO 2 WITH ANIMATION) -->
+  <div id="stage-car" onclick="startAppSequence()">
+    <div class="stage1-brand-badge">
+      <img src="tyrz_logo.jpg" alt="TYRZ">
+      <span>TYRZ <em>LAB</em></span>
+    </div>
+
+    <div class="car-motion-wrapper">
+      <!-- PHOTO 2: CINEMATIC WET ROAD FERRARI F40 WITH POP-UP HEADLIGHTS -->
+      <img id="car-img" src="f40_car.jpg" alt="Ferrari F40 Telemetry">
+      
+      <div class="stage1-overlay"></div>
+    </div>
+
+    <div class="enter-prompt-pill">
+      CLICK ANYWHERE TO <span>ENTER PORTAL</span>
+    </div>
+  </div>
+
+  <!-- STAGE 2: FULL TYRE VIEWPORT & AUTH PANEL -->
+  <div id="stage-viewport">
+    <div class="top-nav">
+      <div class="top-logo">
+        <img src="tyrz_logo.jpg" alt="TYRZ" style="height: 28px; border-radius: 4px;">
+        TYRZ <span>// AI TELEMETRY</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn-replay-intro" onclick="replayIntro()">
+          ↻ REPLAY INTRO
+        </button>
+      </div>
+    </div>
+
+    <div class="viewport-content">
+      <div class="tyre-bg-container">
+        <img src="f40_real_tyre.png" alt="Ferrari F40 Tyre">
+      </div>
+
+      <!-- Auth Card (2nd Login Bar with Backend Integration) -->
+      <div class="auth-card-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="brand-tag" style="margin-bottom: 0;">TYRZ // AI TELEMETRY</div>
+          <div id="server-status-pill" style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(0, 230, 118, 0.12); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); display: inline-flex; align-items: center; gap: 5px;">
+            <span id="server-status-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block;"></span>
+            <span id="server-status-text">SERVER ONLINE</span>
+          </div>
+        </div>
+
+        <h1 id="form-title" class="auth-title">Login</h1>
+        <p id="form-subtitle" class="auth-subtitle">Enter your pilot credentials to access telemetry dashboard.</p>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tab-switch">
+          <button id="tab-btn-login" class="auth-tab-btn active" onclick="switchAuthTab('login')">🔑 LOGIN</button>
+          <button id="tab-btn-register" class="auth-tab-btn" onclick="switchAuthTab('register')">📄 CREATE ACCOUNT</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form-view">
+          <div class="form-group">
+            <label for="login-username">USERNAME</label>
+            <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">PASSWORD</label>
+            <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+          </div>
+
+          <button class="btn-submit" id="login-btn" onclick="handleLogin()">Login ➔</button>
+        </div>
+
+        <!-- Register Form (Hidden by Default) -->
+        <div id="register-form-view" style="display: none;">
+          <div class="form-group">
+            <label for="reg-username">USERNAME</label>
+            <input type="text" id="reg-username" placeholder="Username" autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label for="reg-email">EMAIL</label>
+            <input type="email" id="reg-email" placeholder="Email" autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="reg-password">PASSWORD</label>
+            <input type="password" id="reg-password" placeholder="Password" autocomplete="new-password">
+          </div>
+
+          <div class="form-group">
+            <label for="reg-confirmPassword">CONFIRM PASSWORD</label>
+            <input type="password" id="reg-confirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+          </div>
+
+          <button class="btn-submit" id="reg-btn" onclick="handleRegister()">Create Account ➔</button>
+        </div>
+
+        <div id="auth-alert-box" class="alert-msg"></div>
+
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTab = 'login';
+
+    var sequenceStarted = false;
+    var stage2Triggered = false;
+    var autoIntroTimer = null;
+
+    function startAppSequence() {
+      if (sequenceStarted) return;   // prevent double-call from click + auto-timer
+      sequenceStarted = true;
+
+      if (autoIntroTimer) {
+        clearTimeout(autoIntroTimer);
+        autoIntroTimer = null;
+      }
+
+      const stageCar = document.getElementById("stage-car");
+      if (!stageCar) return;
+
+      // Fade out Stage 1
+      stageCar.classList.add("hidden");
+
+      // Smoothly trigger Stage 2 reveal without relying on bubbling transitionend
+      setTimeout(function() {
+        triggerStage2Animations();
+      }, 400);
+    }
+
+    function triggerStage2Animations() {
+      if (stage2Triggered) return;
+      stage2Triggered = true;
+
+      var tyreBg = document.querySelector('.tyre-bg-container img');
+      var topNav = document.querySelector('.top-nav');
+      var card   = document.querySelector('.auth-card-panel');
+
+      // Step 1: Reveal tyre background
+      requestAnimationFrame(function() {
+        if (tyreBg) tyreBg.classList.add('visible');
+
+        // Step 2: Reveal top nav after 200ms
+        setTimeout(function() {
+          if (topNav) topNav.classList.add('visible');
+        }, 200);
+
+        // Step 3: Glide in auth card panel cleanly after 350ms (once, smooth, no flashing)
+        setTimeout(function() {
+          if (card) card.classList.add('visible');
+        }, 350);
+      });
+    }
+
+    function replayIntro() {
+      const stageCar = document.getElementById("stage-car");
+      const carImg = document.getElementById("car-img");
+      if (stageCar && carImg) {
+        // Reset flags & state
+        sequenceStarted = false;
+        stage2Triggered = false;
+        if (autoIntroTimer) {
+          clearTimeout(autoIntroTimer);
+        }
+        autoIntroTimer = setTimeout(function() {
+          startAppSequence();
+        }, 3200);
+
+        var tyreBg = document.querySelector('.tyre-bg-container img');
+        var topNav = document.querySelector('.top-nav');
+        var card   = document.querySelector('.auth-card-panel');
+        if (tyreBg) tyreBg.classList.remove('visible');
+        if (topNav) topNav.classList.remove('visible');
+        if (card)   card.classList.remove('visible');
+
+        // Reset intro car animation
+        carImg.style.animation = 'none';
+        carImg.offsetHeight; // force reflow
+        carImg.style.animation = 'kenBurnsF40 4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        stageCar.classList.remove("hidden", "transitioning");
+      }
+    }
+
+    function switchAuthTab(tab) {
+      currentTab = tab;
+      const loginView = document.getElementById("login-form-view");
+      const regView = document.getElementById("register-form-view");
+      const loginTabBtn = document.getElementById("tab-btn-login");
+      const regTabBtn = document.getElementById("tab-btn-register");
+      const formTitle = document.getElementById("form-title");
+      const formSubtitle = document.getElementById("form-subtitle");
+      const alertBox = document.getElementById("auth-alert-box");
+
+      alertBox.style.display = "none";
+
+      if (tab === 'login') {
+        loginView.style.display = "block";
+        regView.style.display = "none";
+        loginTabBtn.classList.add("active");
+        regTabBtn.classList.remove("active");
+        formTitle.textContent = "Login";
+        formSubtitle.textContent = "Enter your pilot credentials to access telemetry dashboard.";
+      } else {
+        loginView.style.display = "none";
+        regView.style.display = "block";
+        regTabBtn.classList.add("active");
+        loginTabBtn.classList.remove("active");
+        formTitle.textContent = "Create Account";
+        formSubtitle.textContent = "Register a new pilot profile to save tyre scan diagnostics.";
+      }
+    }
+
+    // ── Resilient API Client ──────────────────────────────────────────────
+    function getApiBaseUrl() {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+        // If loaded via dev server on non-5000 port (e.g., 5500, 8000), target port 5000 on the same host
+        if (window.location.port && window.location.port !== '5000') {
+          return `${window.location.protocol}//${window.location.hostname}:5000`;
+        }
+        // When loaded directly on port 5000, relative URL avoids all CORS and origin mismatches
+        return '';
+      }
+      return 'http://localhost:5000';
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+      const base = getApiBaseUrl();
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      const url = endpoint.startsWith('http') ? endpoint : `${base}${cleanEndpoint}`;
+
+      const opts = {
+        ...options,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      };
+
+      const token = localStorage.getItem('token');
+      if (token && !opts.headers['Authorization']) {
+        opts.headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      try {
+        return await fetch(url, opts);
+      } catch (err) {
+        // Dual fallback: if localhost failed (e.g. IPv6 loopback issue), retry 127.0.0.1
+        if (url.includes('localhost:5000')) {
+          const fallbackUrl = url.replace('localhost:5000', '127.0.0.1:5000');
+          return await fetch(fallbackUrl, opts);
+        }
+        throw err;
+      }
+    }
+
+    // ── Server Health & Reconnection Monitor ────────────────────────────────
+    async function checkServerConnection() {
+      const pill = document.getElementById('server-status-pill');
+      const dot = document.getElementById('server-status-dot');
+      const text = document.getElementById('server-status-text');
+      if (!pill || !dot || !text) return;
+
+      try {
+        const res = await apiFetch('/api/status');
+        if (res.ok) {
+          pill.style.background = 'rgba(0, 230, 118, 0.12)';
+          pill.style.borderColor = 'rgba(0, 230, 118, 0.3)';
+          pill.style.color = '#00e676';
+          dot.style.background = '#00e676';
+          text.textContent = 'SERVER ONLINE';
+        } else {
+          throw new Error('Server returned ' + res.status);
+        }
+      } catch (e) {
+        pill.style.background = 'rgba(230, 0, 0, 0.15)';
+        pill.style.borderColor = 'rgba(230, 0, 0, 0.4)';
+        pill.style.color = '#ff4d4d';
+        dot.style.background = '#ff4d4d';
+        text.textContent = 'SERVER OFFLINE (RETRY)';
+        pill.style.cursor = 'pointer';
+        pill.onclick = () => {
+          text.textContent = 'CONNECTING...';
+          checkServerConnection();
+        };
+      }
+    }
+
+
+    function clearLocalSession() {
+      localStorage.removeItem('user');
+      localStorage.removeItem('tyrz_active_user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('tyrz_scan_history');
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('tyrz_scan_history')) {
+          localStorage.removeItem(key);
+        }
+      });
+      const banner = document.getElementById('active-session-banner');
+      if (banner) banner.style.display = 'none';
+      const alertBox = document.getElementById('auth-alert-box');
+      if (alertBox) {
+        alertBox.className = 'alert-msg';
+        alertBox.textContent = 'Session cleared. Enter credentials below.';
+        alertBox.style.display = 'block';
+      }
+    }
+
+    async function handleLogin() {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value;
+      const alertBox = document.getElementById("auth-alert-box");
+      const loginBtn = document.getElementById("login-btn");
+
+      if (!username || !password) {
+        alertBox.className = "alert-msg error";
+        alertBox.textContent = "❌ Please enter both username and password.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      alertBox.style.display = "none";
+      loginBtn.disabled = true;
+      loginBtn.textContent = "AUTHENTICATING...";
+
+      try {
+        const response = await apiFetch("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alertBox.className = "alert-msg success";
+          alertBox.textContent = "✓ Login successful! Redirecting to dashboard...";
+          alertBox.style.display = "block";
+
+          // Clear any previous user's cached telemetry to enforce fresh isolation
+          localStorage.removeItem('tyrz_scan_history');
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('tyrz_scan_history')) {
+              localStorage.removeItem(key);
+            }
+          });
+
+          localStorage.setItem("user", JSON.stringify(data.user));
+          localStorage.setItem("tyrz_active_user", JSON.stringify(data.user));
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+          }
+
+          setTimeout(() => {
+            window.location.href = "landing.html";
+          }, 800);
+        } else {
+          alertBox.className = "alert-msg error";
+          alertBox.textContent = "❌ " + (data.message || "Login failed");
+          alertBox.style.display = "block";
+          loginBtn.disabled = false;
+          loginBtn.textContent = "Login ➔";
+        }
+      } catch (error) {
+        console.error('Login connection error:', error);
+        alertBox.className = "alert-msg error";
+        alertBox.textContent = "❌ Server unreachable. Make sure the backend server is running on port 5000.";
+        alertBox.style.display = "block";
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login ➔";
+        checkServerConnection();
+      }
+    }
+
+    async function handleRegister() {
+      const username = document.getElementById("reg-username").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const password = document.getElementById("reg-password").value;
+      const confirmPassword = document.getElementById("reg-confirmPassword").value;
+      const alertBox = document.getElementById("auth-alert-box");
+      const regBtn = document.getElementById("reg-btn");
+
+      if (!username || !email || !password || !confirmPassword) {
+        alertBox.className = "alert-msg error";
+        alertBox.textContent = "❌ All fields are required.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alertBox.className = "alert-msg error";
+        alertBox.textContent = "❌ Passwords do not match.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      alertBox.style.display = "none";
+      regBtn.disabled = true;
+      regBtn.textContent = "CREATING ACCOUNT...";
+
+      try {
+        const response = await apiFetch("/api/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alertBox.className = "alert-msg success";
+          alertBox.textContent = "✓ Account created! Switching to login...";
+          alertBox.style.display = "block";
+
+          setTimeout(() => {
+            switchAuthTab('login');
+            document.getElementById("login-username").value = username;
+            document.getElementById("login-password").value = '';
+          }, 1200);
+        } else {
+          alertBox.className = "alert-msg error";
+          alertBox.textContent = "❌ " + (data.message || "Registration failed");
+          alertBox.style.display = "block";
+          regBtn.disabled = false;
+          regBtn.textContent = "Create Account ➔";
+        }
+      } catch (error) {
+        console.error('Registration connection error:', error);
+        alertBox.className = "alert-msg error";
+        alertBox.textContent = "❌ Server unreachable. Make sure the backend server is running on port 5000.";
+        alertBox.style.display = "block";
+        regBtn.disabled = false;
+        regBtn.textContent = "Create Account ➔";
+        checkServerConnection();
+      }
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (currentTab === 'login') handleLogin();
+        else handleRegister();
+      }
+    });
+
+    // Check server connection on DOM ready
+    window.addEventListener('DOMContentLoaded', function() {
+      checkServerConnection();
+    });
+
+    // Auto advance intro sequence after 3.2s
+    autoIntroTimer = setTimeout(function() {
+      startAppSequence();
+    }, 3200);
+  </script>
+</body>
+</html>

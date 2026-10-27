@@ -1,0 +1,46 @@
+@base = http://localhost:5000
+
+### 1. Backend health
+GET {{base}}/api/health
+
+### 2. List categories
+GET {{base}}/api/catalog/categories
+
+### 3. List cars
+GET {{base}}/api/catalog/vehicles?category=car&market=IN
+
+### 4. Search for a bike model
+GET {{base}}/api/catalog/vehicles?category=bike&search=Activa&market=IN
+
+### 5. Get years/variants/fitments for the selected model year
+GET {{base}}/api/catalog/fitments?category=car&make=Maruti%20Suzuki&model=Swift&year=2023&market=IN
+
+### 6. Get tyres matching one known size
+GET {{base}}/api/catalog/tyres?category=car&size=185%2F65R15&market=IN
+
+### 7. Get fitment + size + compatible demo product options for the selected wheel position
+GET {{base}}/api/catalog/options?category=car&make=Maruti%20Suzuki&model=Swift&year=2023&variant=ZXi%20(demo)&position=front-left&market=IN
+
+### 8. Calibration references
+GET {{base}}/api/catalog/calibration-references
+
+### 9. Save an inspection (demo values only; photo mode needs calibration)
+POST {{base}}/api/inspections
+Content-Type: application/json
+
+{
+  "vehicleCategory": "car",
+  "vehicleMake": "Maruti Suzuki",
+  "vehicleModel": "Swift",
+  "modelYear": 2023,
+  "vehicleVariant": "ZXi (demo)",
+  "tyreBrand": "MRF",
+  "tyreModel": "ZVTV (demo mapping)",
+  "tyreSize": "185/65R15",
+  "tyrePosition": "front-left",
+  "odometerKm": 45000,
+  "measurementMethod": "photo",
+  "calibrationReferenceKey": "us-quarter",
+  "imageUrls": [],
+  "notes": "Smoke test only; never use the demo fitment as a recommendation."
+}

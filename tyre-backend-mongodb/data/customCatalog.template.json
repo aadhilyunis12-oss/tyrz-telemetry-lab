@@ -1,0 +1,50 @@
+{
+  "vehicles": [
+    {
+      "category": "car",
+      "market": "IN",
+      "make": "Example Make",
+      "model": "Example Model",
+      "supportedYears": [2024],
+      "bodyStyles": ["Hatchback"],
+      "sourceName": "manufacturer-catalogue",
+      "sourceUrl": "https://official-source.example/fitment",
+      "verified": true,
+      "demoOnly": false,
+      "notes": "Record checked against official market/year/variant source."
+    }
+  ],
+  "fitments": [
+    {
+      "category": "car",
+      "market": "IN",
+      "make": "Example Make",
+      "model": "Example Model",
+      "year": 2024,
+      "variant": "Example Variant",
+      "frontSize": "205/55R16",
+      "rearSize": "205/55R16",
+      "fitmentType": "OEM",
+      "sourceName": "manufacturer-catalogue",
+      "sourceUrl": "https://official-source.example/fitment",
+      "verified": true,
+      "demoOnly": false,
+      "notes": "Replace example values with verified real records before importing."
+    }
+  ],
+  "tireProducts": [
+    {
+      "category": "car",
+      "market": "IN",
+      "brand": "Example Tyre Brand",
+      "model": "Example Tyre Model",
+      "sizes": ["205/55R16"],
+      "sourceName": "official-product-catalogue",
+      "sourceUrl": "https://official-source.example/product",
+      "verified": true,
+      "demoOnly": false,
+      "notes": "Include only sizes specifically confirmed for this product and market."
+    }
+  ],
+  "calibrationReferences": []
+}

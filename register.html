@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Create Account — Ferrari F40 Telemetry & AI Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #040507;
+      --card-bg: rgba(10, 12, 16, 0.92);
+      --accent: #e60000;
+      --accent-glow: rgba(230, 0, 0, 0.45);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f5f6fa;
+      --text-dim: #9aa1b2;
+      --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 100vw;
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(230, 0, 0, 0.18) 0%, transparent 65%),
+        radial-gradient(circle at 90% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card-bg);
+      border: 1px solid rgba(230, 0, 0, 0.4);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(230, 0, 0, 0.15);
+    }
+
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--accent-glow);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #ff1a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px var(--accent-glow);
+    }
+
+    .bottom-link {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .bottom-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .bottom-link a:hover {
+      text-decoration: underline;
+    }
+
+    .alert-msg {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      display: none;
+    }
+
+    .alert-msg.error {
+      background: rgba(255, 23, 68, 0.15);
+      border: 1px solid #ff1744;
+      color: #ff1744;
+    }
+
+    .alert-msg.success {
+      background: rgba(0, 230, 118, 0.15);
+      border: 1px solid #00e676;
+      color: #00e676;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="brand-tag">TYRZ // AI TELEMETRY</div>
+    <h1>Create Account</h1>
+    <p class="subtitle">Register a new pilot profile to save tyre scan diagnostics.</p>
+
+    <div class="form-group">
+      <label for="name">FULL NAME</label>
+      <input type="text" id="name" placeholder="Full name" autocomplete="name">
+    </div>
+
+    <div class="form-group">
+      <label for="username">USERNAME</label>
+      <input type="text" id="username" placeholder="Username" autocomplete="username">
+    </div>
+
+    <div class="form-group">
+      <label for="email">EMAIL</label>
+      <input type="email" id="email" placeholder="Email" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label for="password">PASSWORD</label>
+      <input type="password" id="password" placeholder="Password" autocomplete="new-password">
+    </div>
+
+    <div class="form-group">
+      <label for="confirmPassword">CONFIRM PASSWORD</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+    </div>
+
+    <button class="btn-submit" id="reg-btn" onclick="register()">Create Account ➔</button>
+
+    <div id="alert-box" class="alert-msg"></div>
+
+    <p class="bottom-link">
+      Already have an account?
+      <a href="login.html">Login</a>
+    </p>
+  </div>
+
+  <script>
+    async function register() {
+      const name            = document.getElementById("name").value.trim();
+      const username        = document.getElementById("username").value.trim();
+      const email           = document.getElementById("email").value.trim();
+      const password        = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+      const alertBox        = document.getElementById("alert-box");
+      const regBtn          = document.getElementById("reg-btn");
+
+      if (!name || !email || !password || !confirmPassword) {
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Name, email and password are required.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Passwords do not match.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      if (password.length < 8) {
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Password must be at least 8 characters.";
+        alertBox.style.display = "block";
+        return;
+      }
+
+      alertBox.style.display = "none";
+      regBtn.disabled        = true;
+      regBtn.textContent     = "CREATING ACCOUNT...";
+
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/register", {
+          method:      "POST",
+          headers:     { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ name, username, email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alertBox.className   = "alert-msg success";
+          alertBox.textContent = "✓ Account created! Redirecting to login...";
+          alertBox.style.display = "block";
+          setTimeout(() => { window.location.href = "login.html"; }, 1200);
+        } else {
+          alertBox.className   = "alert-msg error";
+          alertBox.textContent = "❌ " + (data.message || "Registration failed");
+          alertBox.style.display = "block";
+          regBtn.disabled    = false;
+          regBtn.textContent = "Create Account ➔";
+        }
+      } catch (error) {
+        console.error(error);
+        alertBox.className   = "alert-msg error";
+        alertBox.textContent = "❌ Unable to connect to backend (http://localhost:5000)";
+        alertBox.style.display = "block";
+        regBtn.disabled    = false;
+        regBtn.textContent = "Create Account ➔";
+      }
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") register();
+    });
+  </script>
+
+</body>
+</html>
