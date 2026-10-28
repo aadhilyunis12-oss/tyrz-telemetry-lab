@@ -457,13 +457,8 @@
       <div class="stage1-overlay"></div>
     </div>
 
-    <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; z-index: 35; width: 90%; max-width: 500px;">
-      <a href="landing.html#telemetry-hub" class="enter-prompt-pill" style="text-decoration: none; cursor: pointer; background: rgba(230, 0, 0, 0.35); border-color: var(--accent); box-shadow: 0 0 20px rgba(230,0,0,0.4);">
-        ⚡ LAUNCH <span>LIVE DEMO</span>
-      </a>
-      <div class="enter-prompt-pill" onclick="event.stopPropagation(); startAppSequence();" style="cursor: pointer;">
-        ⏩ SKIP <span>INTRO</span>
-      </div>
+    <div class="enter-prompt-pill">
+      CLICK ANYWHERE TO <span>ENTER PORTAL</span>
     </div>
   </div>
 
@@ -519,14 +514,6 @@
           </div>
 
           <button class="btn-submit" id="login-btn" onclick="handleLogin()">Login ➔</button>
-
-          <div style="margin: 12px 0 6px 0; text-align: center; position: relative;">
-            <span style="color: var(--text-muted); font-size: 0.72rem; font-family: var(--font-mono); letter-spacing: 0.5px;">— OR EXPLORE AS GUEST —</span>
-          </div>
-
-          <a href="landing.html#telemetry-hub" class="btn-submit" style="display: block; text-align: center; text-decoration: none; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; margin-top: 6px;">
-            ⚡ Explore Live Telemetry Demo ➔
-          </a>
         </div>
 
         <!-- Register Form (Hidden by Default) -->
