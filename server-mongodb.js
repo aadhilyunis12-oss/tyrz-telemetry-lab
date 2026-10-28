@@ -885,7 +885,19 @@ const server = http.createServer(async (req, res) => {
 
     const safe = treadDepthMm >= legalMinMm;
     const usableDepth = Math.max(0, treadDepthMm - legalMinMm);
-    const remainingKm = Math.round((usableDepth / wearRate) * 1000);
+
+    // Base remaining km from tread depth and compound wear rate
+    const baseRemainingKm = Math.round((usableDepth / wearRate) * 1000);
+
+    // Adjust remaining km using odometer: higher mileage tyres degrade faster.
+    // Formula: subtract (odometerKm / lifespan) proportion from remaining life.
+    // We use specCategory.avgLifespanKm (default 40000 km) as the reference tyre lifespan.
+    const odometerKm = Number(metadata.odometerKm) || 0;
+    const avgLifespanKm = specCategory.avgLifespanKm || 40000;
+    const odometerWearFactor = odometerKm > 0
+      ? Math.max(0.4, 1 - (odometerKm / avgLifespanKm) * 0.6)
+      : 1;
+    const remainingKm = Math.round(baseRemainingKm * odometerWearFactor);
 
     let condition = "🟢 Good";
     if (treadDepthMm < legalMinMm + 0.3) {
@@ -915,7 +927,7 @@ const server = http.createServer(async (req, res) => {
         position: metadata.position || (specCategory.positions[0] ? specCategory.positions[0].code : 'FL'),
         vehicleType: specCategory.name,
         vehicleModel: metadata.vehicleModel || (specCategory.popularModels[0] ? specCategory.popularModels[0].model : 'Road Vehicle'),
-        odometerKm: Number(metadata.odometerKm) || 45000,
+        odometerKm: odometerKm || 0,
         recommendedPsi: specCategory.defaultPsi,
         calibrationRefMm: refMm,
         calibrationFactor: (refMm / 175.0).toFixed(2),

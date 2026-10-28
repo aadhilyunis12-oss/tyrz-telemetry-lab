@@ -38,6 +38,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.0,
       wearRatePer1kKm: 0.14,
+      avgLifespanKm: 45000,
       defaultPsi: '32 – 35 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -65,6 +66,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.5,
       wearRatePer1kKm: 0.16,
+      avgLifespanKm: 50000,
       defaultPsi: '35 – 40 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -92,6 +94,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 4.0,
       wearRatePer1kKm: 0.18,
+      avgLifespanKm: 55000,
       defaultPsi: '38 – 45 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -118,6 +121,7 @@
       legalMinMm: 3.2, // Steer axle legal limit is 3.2mm (4/32")
       warningThresholdMm: 5.5,
       wearRatePer1kKm: 0.25,
+      avgLifespanKm: 120000,
       defaultPsi: '100 – 120 PSI',
       positions: [
         { code: 'L1', label: 'Steer Axle Left (L1)' },
@@ -147,6 +151,7 @@
       legalMinMm: 3.2,
       warningThresholdMm: 5.0,
       wearRatePer1kKm: 0.22,
+      avgLifespanKm: 100000,
       defaultPsi: '95 – 110 PSI',
       positions: [
         { code: 'FL', label: 'Front Left Steer' },
@@ -172,6 +177,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.2,
       wearRatePer1kKm: 0.16,
+      avgLifespanKm: 50000,
       defaultPsi: '45 – 65 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -197,6 +203,7 @@
       legalMinMm: 1.0, // Motorcycle legal min is 1.0mm (1/32")
       warningThresholdMm: 2.0,
       wearRatePer1kKm: 0.35, // Softer sticky compound wears faster
+      avgLifespanKm: 15000,
       defaultPsi: '33 – 42 PSI',
       positions: [
         { code: 'F', label: 'Front Wheel' },
@@ -222,6 +229,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.2,
       wearRatePer1kKm: 0.19, // Instant high torque & heavy battery increases wear rate by ~35%
+      avgLifespanKm: 35000,
       defaultPsi: '38 – 45 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -249,6 +257,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.0,
       wearRatePer1kKm: 0.24, // High speed camber & high lateral g-forces
+      avgLifespanKm: 20000,
       defaultPsi: '30 – 34 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
