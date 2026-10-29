@@ -999,8 +999,9 @@
       font-family: var(--font-mono);
       font-size: 4rem;
       font-weight: 800;
-      color: var(--accent);
+      color: var(--success);
       line-height: 1;
+      transition: color 0.4s ease;
     }
 
     .tread-depth-unit {
@@ -1063,8 +1064,8 @@
     }
 
     .condition-badge.good { background: rgba(0, 230, 118, 0.15); color: var(--success); border: 1px solid var(--success); }
-    .condition-badge.monitor { background: rgba(255, 171, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
-    .condition-badge.replace { background: rgba(255, 23, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+    .condition-badge.monitor, .condition-badge.warning { background: rgba(255, 171, 0, 0.15); color: var(--warning); border: 1px solid var(--warning); }
+    .condition-badge.replace, .condition-badge.danger { background: rgba(255, 23, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
 
     .remaining-dist-box {
       background: rgba(255, 255, 255, 0.03);
@@ -1076,9 +1077,11 @@
 
     .remaining-dist-val {
       font-family: var(--font-mono);
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       font-weight: 700;
       color: var(--text);
+      line-height: 1.45;
+      word-break: normal;
     }
 
     /* Table */
@@ -2577,7 +2580,9 @@
             stepDepth.innerText = '✓ Tread depth calculated: ' + data.tread_depth_mm + ' mm';
             stepDepth.classList.add('done');
           }
-          if (stepLife) stepLife.innerText = '⏳ Computing wear trajectory to 1.6mm legal limit...';
+          const cat = (typeof TyrzVehicleDataset !== 'undefined') ? TyrzVehicleDataset.getCategory(vtype) : null;
+          const limitMm = (data.threshold_mm || (cat ? cat.legalMinMm : 1.6)).toFixed(1);
+          if (stepLife) stepLife.innerText = '⏳ Computing wear trajectory to ' + limitMm + ' mm legal limit...';
         }, 1700);
 
         // Step 4: Life & safety
@@ -2610,7 +2615,8 @@
         const baseline = cat ? cat.defaultBaselineMm : ((vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0)));
         const legalMin = cat ? cat.legalMinMm : (vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6));
         const lifespan = cat ? cat.avgLifespanKm : 45000;
-        const wearRate = cat ? cat.wearRatePer1kKm : 0.14;
+        const wearRate = cat ? cat.wearRatePer1kKm : 0.142;
+        const warnThreshold = cat ? cat.warningThresholdMm : 3.0;
 
         let depth;
         let remKm;
@@ -2620,10 +2626,19 @@
           depth = baseline - (wearRatio * (baseline - legalMin));
           depth = Math.max(legalMin + 0.4, Math.min(baseline, depth));
           depth = Math.round(depth * 10) / 10;
-          remKm = Math.max(1200, Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000));
+          remKm = Math.min(lifespan, Math.max(depth <= legalMin + 0.2 ? 0 : 500, Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000)));
         } else {
           depth = Math.round((legalMin + ((baseline - legalMin) * 0.65)) * 10) / 10;
-          remKm = Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000);
+          remKm = Math.min(lifespan, Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000));
+        }
+
+        let condText = '🟢 Good';
+        if (depth >= baseline - 0.4) {
+          condText = '🟢 Excellent / Brand New';
+        } else if (depth <= legalMin + 0.2) {
+          condText = '🔴 Critical Flat Imminent';
+        } else if (depth <= warnThreshold) {
+          condText = '🟡 Wear Warning';
         }
 
         const localData = {
@@ -2631,7 +2646,7 @@
           tread_depth_mm: depth,
           remaining_km: remKm,
           safe: depth >= legalMin,
-          condition: depth >= baseline - 0.4 ? '🟢 Excellent / Brand New' : (depth <= legalMin + 0.3 ? '🔴 Critical' : (depth <= 3.0 ? '🟡 Wear Warning' : '🟢 Good')),
+          condition: condText,
           confidence: 0.94
         };
 
@@ -2668,20 +2683,36 @@
       const safe = data.safe;
       const conf = Math.round((data.confidence || 0.92) * 100);
 
-      // Report Gauge Card
-      const reportDepth = document.getElementById('report-depth-val');
-      if (reportDepth) reportDepth.textContent = depth;
-
-      const badge = document.getElementById('report-condition-badge');
-      if (badge) {
-        badge.textContent = cond;
-        badge.className = 'condition-badge ' + (depth >= 4.0 ? 'good' : (depth >= 2.5 ? 'warning' : 'danger'));
-      }
-
       const vtype = document.getElementById('veh-type')?.value || 'car';
       const cat = (typeof TyrzVehicleDataset !== 'undefined') ? TyrzVehicleDataset.getCategory(vtype) : null;
       const baseMm = cat ? cat.defaultBaselineMm : ((vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0)));
       const minMm = cat ? cat.legalMinMm : (vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6));
+      const warnMm = cat ? cat.warningThresholdMm : 3.0;
+
+      // Report Gauge Card - Dynamic color based on health: Green (Healthy), Amber (Warning), Red (Critical)
+      const reportDepth = document.getElementById('report-depth-val');
+      if (reportDepth) {
+        reportDepth.textContent = depth;
+        if (depth >= warnMm) {
+          reportDepth.style.color = 'var(--success)'; // Healthy Vibrant Green (#00e676)
+        } else if (depth > minMm) {
+          reportDepth.style.color = 'var(--warning)'; // Amber Warning (#ffab00)
+        } else {
+          reportDepth.style.color = 'var(--danger)';  // Red Danger (#ff1744)
+        }
+      }
+
+      const badge = document.getElementById('report-condition-badge');
+      if (badge) {
+        badge.textContent = cond;
+        if (depth >= warnMm) {
+          badge.className = 'condition-badge good';
+        } else if (depth > minMm) {
+          badge.className = 'condition-badge monitor';
+        } else {
+          badge.className = 'condition-badge replace';
+        }
+      }
 
       // Dynamic Gauge Bar Scaling & Labels
       const gaugeFill = document.getElementById('gauge-fill-bar');
@@ -2700,7 +2731,9 @@
       if (lblMax)  lblMax.textContent = baseMm.toFixed(1) + ' mm';
 
       const kmVal = document.getElementById('report-km-val');
-      if (kmVal) kmVal.textContent = 'Approximately ' + Number(km).toLocaleString() + ' km until ' + minMm + ' mm legal limit';
+      if (kmVal) {
+        kmVal.innerHTML = 'Approximately <strong>' + Number(km).toLocaleString() + '&nbsp;km</strong> until <strong>' + minMm.toFixed(1) + '&nbsp;mm</strong> legal limit';
+      }
 
       // Parameter Table
       const tblDepth   = document.getElementById('tbl-depth');
@@ -2714,10 +2747,10 @@
       const wearPct = Math.max(0, Math.min(100, Math.round(((baseMm - depth) / (baseMm - minMm)) * 100)));
       if (tblWear)   tblWear.textContent = wearPct + '%';
       const usable = Math.max(0, depth - minMm).toFixed(1);
-      if (tblUsable) tblUsable.textContent = usable + ' mm (' + minMm + ' mm Legal Safety Cutoff)';
+      if (tblUsable) tblUsable.textContent = usable + ' mm (' + minMm.toFixed(1) + ' mm Legal Safety Cutoff)';
       if (tblCond) {
         tblCond.textContent = cond;
-        tblCond.style.color = depth >= 4.0 ? 'var(--success)' : (depth >= 2.5 ? 'var(--warning)' : 'var(--danger)');
+        tblCond.style.color = depth >= warnMm ? 'var(--success)' : (depth > minMm ? 'var(--warning)' : 'var(--danger)');
       }
       if (tblKm)   tblKm.textContent = Number(km).toLocaleString() + ' km';
       if (tblConf) tblConf.textContent = conf + '% (Optical Scale Calibrated)';

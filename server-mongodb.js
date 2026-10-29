@@ -946,15 +946,16 @@ const server = http.createServer(async (req, res) => {
 
       const usableDepth = Math.max(0, treadDepthMm - legalMinMm);
       remainingKm = Math.round((usableDepth / wearRate) * 1000);
-      remainingKm = Math.max(1200, remainingKm);
+      remainingKm = Math.min(avgLifespanKm, Math.max(usableDepth <= 0.2 ? 0 : 500, remainingKm));
     } else {
       // Optical fallback when odometer is left blank (healthy road tyre profile)
-      const minDepthPossible = legalMinMm + 1.5;
+      const minDepthPossible = legalMinMm + 1.2;
       const maxDepthPossible = baselineMm - 0.4;
       treadDepthMm = minDepthPossible + ((seed % 70) / 70.0) * (maxDepthPossible - minDepthPossible);
       treadDepthMm = Math.round(treadDepthMm * 10) / 10;
       const usableDepth = Math.max(0, treadDepthMm - legalMinMm);
       remainingKm = Math.round((usableDepth / wearRate) * 1000);
+      remainingKm = Math.min(avgLifespanKm, Math.max(0, remainingKm));
     }
 
     const safe = treadDepthMm >= legalMinMm;
@@ -963,7 +964,7 @@ const server = http.createServer(async (req, res) => {
     let condition = "🟢 Good";
     if (treadDepthMm >= baselineMm - 0.4) {
       condition = "🟢 Excellent / Brand New";
-    } else if (treadDepthMm < legalMinMm + 0.3) {
+    } else if (treadDepthMm <= legalMinMm + 0.2) {
       condition = "🔴 Critical Flat Imminent";
     } else if (treadDepthMm <= warningMm) {
       condition = "🟡 Wear Warning";

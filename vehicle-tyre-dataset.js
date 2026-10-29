@@ -37,7 +37,7 @@
       defaultBaselineMm: 8.0,
       legalMinMm: 1.6,
       warningThresholdMm: 3.0,
-      wearRatePer1kKm: 0.14,
+      wearRatePer1kKm: 0.142,
       avgLifespanKm: 45000,
       defaultPsi: '32 – 35 PSI',
       positions: [
@@ -65,8 +65,8 @@
       defaultBaselineMm: 10.0,
       legalMinMm: 1.6,
       warningThresholdMm: 3.5,
-      wearRatePer1kKm: 0.15,
-      avgLifespanKm: 55000,
+      wearRatePer1kKm: 0.168,
+      avgLifespanKm: 50000,
       defaultPsi: '35 – 40 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -93,8 +93,8 @@
       defaultBaselineMm: 11.0,
       legalMinMm: 1.6,
       warningThresholdMm: 4.0,
-      wearRatePer1kKm: 0.16,
-      avgLifespanKm: 60000,
+      wearRatePer1kKm: 0.171,
+      avgLifespanKm: 55000,
       defaultPsi: '38 – 45 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -120,8 +120,8 @@
       defaultBaselineMm: 18.0,
       legalMinMm: 3.2, // Steer axle legal limit is 3.2mm (4/32")
       warningThresholdMm: 5.5,
-      wearRatePer1kKm: 0.12,
-      avgLifespanKm: 120000,
+      wearRatePer1kKm: 0.148,
+      avgLifespanKm: 100000,
       defaultPsi: '100 – 120 PSI',
       positions: [
         { code: 'L1', label: 'Steer Axle Left (L1)' },
@@ -150,8 +150,8 @@
       defaultBaselineMm: 16.0,
       legalMinMm: 3.2,
       warningThresholdMm: 5.0,
-      wearRatePer1kKm: 0.13,
-      avgLifespanKm: 100000,
+      wearRatePer1kKm: 0.160,
+      avgLifespanKm: 80000,
       defaultPsi: '95 – 110 PSI',
       positions: [
         { code: 'FL', label: 'Front Left Steer' },
@@ -176,8 +176,8 @@
       defaultBaselineMm: 9.5,
       legalMinMm: 1.6,
       warningThresholdMm: 3.2,
-      wearRatePer1kKm: 0.16,
-      avgLifespanKm: 50000,
+      wearRatePer1kKm: 0.175,
+      avgLifespanKm: 45000,
       defaultPsi: '45 – 65 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -202,8 +202,8 @@
       defaultBaselineMm: 7.0, // Rear baseline: 7.0mm, Front: 4.5mm
       legalMinMm: 1.0, // Motorcycle legal min is 1.0mm (1/32")
       warningThresholdMm: 2.0,
-      wearRatePer1kKm: 0.20, // Real-world commuter & sports motorcycle compound wear rate (~30,000 km)
-      avgLifespanKm: 30000,
+      wearRatePer1kKm: 0.40, // Real motorcycle tyre wear rate (~15,000 km max life)
+      avgLifespanKm: 15000,
       defaultPsi: '33 – 42 PSI',
       positions: [
         { code: 'F', label: 'Front Wheel' },
@@ -228,7 +228,7 @@
       defaultBaselineMm: 8.0,
       legalMinMm: 1.6,
       warningThresholdMm: 3.2,
-      wearRatePer1kKm: 0.19, // Instant high torque & heavy battery increases wear rate by ~35%
+      wearRatePer1kKm: 0.183, // Instant high torque & heavy battery increases wear rate by ~30%
       avgLifespanKm: 35000,
       defaultPsi: '38 – 45 PSI',
       positions: [
@@ -256,8 +256,8 @@
       defaultBaselineMm: 7.5,
       legalMinMm: 1.6,
       warningThresholdMm: 3.0,
-      wearRatePer1kKm: 0.24, // High speed camber & high lateral g-forces
-      avgLifespanKm: 25000,
+      wearRatePer1kKm: 0.295, // High speed camber & high lateral g-forces
+      avgLifespanKm: 20000,
       defaultPsi: '30 – 34 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
