@@ -1587,10 +1587,16 @@
             </div>
 
             <div>
-              <div class="form-group-title">🛞 Tyre Details</div>
+              <div class="form-group-title">🛞 Tyre Details &amp; Optical Calibration</div>
               <div class="form-row">
                 <label>Tyre Brand & Model</label>
                 <input type="text" id="tyre-brand" placeholder="e.g. Pirelli P Zero / Michelin Pilot Sport">
+              </div>
+              <div class="form-row">
+                <label>Calibration Scale Reference</label>
+                <select id="calib-ref-type">
+                  <option value="auto_detect" selected>⚡ AI Auto-Detect Reference Scale</option>
+                </select>
               </div>
               <div class="form-row">
                 <label>Tyre Size</label>
@@ -2363,7 +2369,7 @@
       const odoInput = document.getElementById('veh-odometer');
       const rawOdoStr = odoInput ? odoInput.value.trim() : '';
       const odo = (rawOdoStr !== '') ? Number(rawOdoStr) : null;
-      const calib = 'auto_detect';
+      const calib = document.getElementById('calib-ref-type') ? document.getElementById('calib-ref-type').value : 'auto_detect';
 
       // Identify active pilot session
       let userEmail = 'pilot.f40@ferrari.io';
