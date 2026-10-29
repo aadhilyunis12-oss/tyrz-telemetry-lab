@@ -25,3 +25,10 @@ backups/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Project Academic Reports & PDFs (Local only - excluded from GitHub)
+*.pdf
+TYRE_PROJECT_ACADEMIC_REPORT.md
+MENTOR_REVIEW_AND_DEFENSE_DOSSIER.md
+AI_TIRE_TREAD_DEPTH_IMPLEMENTATION_GUIDE.md
+tyre_project_full_academic_report.md
