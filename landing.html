@@ -1947,36 +1947,7 @@
       }
     }
 
-    async function checkLandingServerConnection() {
-      const pill = document.getElementById('landing-server-pill');
-      const dot = document.getElementById('landing-server-dot');
-      const text = document.getElementById('landing-server-text');
-      if (!pill || !dot || !text) return;
-
-      try {
-        const res = await apiFetch('/api/status');
-        if (res.ok) {
-          pill.style.background = 'rgba(0, 230, 118, 0.12)';
-          pill.style.borderColor = 'rgba(0, 230, 118, 0.3)';
-          pill.style.color = '#00e676';
-          dot.style.background = '#00e676';
-          text.textContent = 'TELEMETRY LINK ACTIVE';
-        } else {
-          throw new Error('Status ' + res.status);
-        }
-      } catch (e) {
-        pill.style.background = 'rgba(230, 0, 0, 0.15)';
-        pill.style.borderColor = 'rgba(230, 0, 0, 0.4)';
-        pill.style.color = '#ff4d4d';
-        dot.style.background = '#ff4d4d';
-        text.textContent = 'LINK OFFLINE (RETRY)';
-        pill.style.cursor = 'pointer';
-        pill.onclick = () => {
-          text.textContent = 'RECONNECTING...';
-          checkLandingServerConnection();
-        };
-      }
-    }
+    async function checkLandingServerConnection() {}
 
     let currentSelectedPosition = 'FL';
     let uploadedImageBase64 = 'f40_real_tyre.png';
