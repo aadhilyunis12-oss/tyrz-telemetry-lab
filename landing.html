@@ -1117,63 +1117,7 @@
       text-align: right;
     }
 
-    /* ═══════════════════════════════════════════════════════════════════
-       SECTION 7: TREAD VISUALIZATION OVERLAY
-    ══════════════════════════════════════════════════════════════════════ */
-    .viz-container {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 32px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      align-items: center;
-    }
 
-    .viz-canvas-wrapper {
-      position: relative;
-      width: 100%;
-      height: 340px;
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      border: 1px solid var(--border-focus);
-    }
-
-    .viz-canvas-wrapper canvas {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .viz-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .viz-toggle-group {
-      display: flex;
-      gap: 8px;
-    }
-
-    .viz-btn {
-      flex: 1;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .viz-btn.active {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
 
     /* ═══════════════════════════════════════════════════════════════════
        SECTION 8: TYRE LIFE PREDICTION GRAPH
@@ -1422,7 +1366,6 @@
       <a href="#home" class="active">Home</a>
       <a href="#scan-section">Scan Tyre</a>
       <a href="#report-section">Health Report</a>
-      <a href="#viz-section">AI Visualizer</a>
       <a href="#dashboard-section">My Vehicle</a>
       <a href="#about-ai">About AI</a>
     </nav>
@@ -1831,40 +1774,7 @@
     </div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════════════════════
-       7. TREAD VISUALIZATION OVERLAY
-  ══════════════════════════════════════════════════════════════════════ -->
-  <section id="viz-section">
-    <div class="container">
-      <div class="section-header">
-        <div class="section-tag">Step 3 — Computer Vision Visualization</div>
-        <h2 class="section-title">AI Tread Detection & Depth Overlay</h2>
-        <p class="section-subtitle">Visualizing the exact tread region analyzed by our neural network overlay.</p>
-      </div>
 
-      <div class="viz-container">
-        <div class="viz-canvas-wrapper">
-          <canvas id="tread-viz-canvas" width="600" height="340"></canvas>
-        </div>
-
-        <div class="viz-controls">
-          <h3 style="font-size: 1.2rem;">AI Detection Layers</h3>
-          <p style="font-size: 0.9rem; color: var(--text-dim);">Toggle visual inspection layers to verify computer vision depth feature maps and groove contour detection.</p>
-          
-          <div class="viz-toggle-group">
-            <button class="viz-btn active" onclick="setVizMode('contour')">🟢 Tread Contours</button>
-            <button class="viz-btn" onclick="setVizMode('heatmap')">🔥 Thermal Wear Map</button>
-            <button class="viz-btn" onclick="setVizMode('raw')">🖼️ Raw Photo</button>
-          </div>
-
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--accent);">Detected Tread Region</div>
-            <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Primary groove depth: <strong id="viz-detected-depth">4.8 mm</strong> across 4 main channel grooves.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ═══════════════════════════════════════════════════════════════════
        8. TYRE LIFE PREDICTION GRAPH
@@ -2761,6 +2671,7 @@
       if (tblScale) tblScale.textContent = (data.metadata?.calibrationFactor || photoMeta.calibFactorText) + ' (Dynamic Image Scan)';
       if (tblRef) tblRef.textContent = (data.metadata?.detectedRefPx || photoMeta.detectedRefPx) + ' px (' + photoMeta.refLabel + ')';
 
+      // Step 3 Visualization section removed - no-op for backward safety
       const vizDepth = document.getElementById('viz-detected-depth');
       if (vizDepth) vizDepth.textContent = depth + ' mm';
 
@@ -3167,105 +3078,9 @@
 
     syncChassisWithBackend();
 
-    // Canvas Visualization
-    function drawCanvasOverlay() {
-      const canvas = document.getElementById('tread-viz-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.src = uploadedImageBase64;
-      img.onload = function() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const depthVal = document.getElementById('report-depth-val')?.textContent || '4.8';
-        const photoMeta = window.lastPhotoTelemetry || getPhotoTelemetry(uploadedImageBase64, 'auto_detect');
-
-        // Top Telemetry Status Bar
-        ctx.fillStyle = 'rgba(10, 12, 16, 0.88)';
-        ctx.fillRect(0, 0, canvas.width, 28);
-        ctx.fillStyle = '#00e676';
-        ctx.font = 'bold 11px "JetBrains Mono"';
-        ctx.fillText(`⚡ AI OPTICAL CALIBRATION: ${photoMeta.calibFactor} mm/px | SCALE TOKEN: ${photoMeta.detectedRefPx}px | RES: ${photoMeta.width}×${photoMeta.height}`, 12, 18);
-
-        if (currentVizMode === 'contour') {
-          // Contact Patch Bounding Box
-          ctx.strokeStyle = '#00e676';
-          ctx.lineWidth = 2.5;
-          ctx.strokeRect(40, 36, canvas.width - 80, canvas.height - 68);
-
-          // 4 Dynamic Groove Channels with Optical Depth
-          const grooves = [
-            { x: canvas.width * 0.28, d: depthVal },
-            { x: canvas.width * 0.42, d: (Math.max(1.6, parseFloat(depthVal) - 0.1)).toFixed(1) },
-            { x: canvas.width * 0.58, d: depthVal },
-            { x: canvas.width * 0.72, d: (parseFloat(depthVal) + 0.1).toFixed(1) }
-          ];
-
-          grooves.forEach((g, i) => {
-            ctx.strokeStyle = 'rgba(230, 0, 0, 0.75)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6, 4]);
-            ctx.beginPath();
-            ctx.moveTo(g.x, 42);
-            ctx.lineTo(g.x, canvas.height - 38);
-            ctx.stroke();
-
-            // Groove Depth Tag
-            ctx.fillStyle = 'rgba(10, 12, 16, 0.85)';
-            ctx.fillRect(g.x - 24, canvas.height - 52, 48, 18);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px "JetBrains Mono"';
-            ctx.fillText(`G${i+1}:${g.d}m`, g.x - 20, canvas.height - 39);
-          });
-          ctx.setLineDash([]);
-
-          // Detected Reference Scale Reticle
-          const rx = canvas.width * 0.14;
-          const ry = canvas.height * 0.70;
-          const rSize = Math.max(16, Math.min(32, Math.round(photoMeta.detectedRefPx * (canvas.width / photoMeta.width) * 0.5)));
-
-          ctx.strokeStyle = '#00e676';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Crosshairs
-          ctx.beginPath();
-          ctx.moveTo(rx - rSize - 4, ry); ctx.lineTo(rx + rSize + 4, ry);
-          ctx.moveTo(rx, ry - rSize - 4); ctx.lineTo(rx, ry + rSize + 4);
-          ctx.stroke();
-
-          ctx.fillStyle = 'rgba(0, 230, 118, 0.95)';
-          ctx.font = 'bold 10px "JetBrains Mono"';
-          ctx.fillText(`⦿ SCALE LOCKED: ${photoMeta.detectedRefPx}px`, rx - 35, ry - rSize - 6);
-          ctx.fillText(`(${photoMeta.calibFactor} mm/px)`, rx - 28, ry + rSize + 14);
-
-        } else if (currentVizMode === 'heatmap') {
-          // Heatmap aligned to tread grooves
-          const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-          grad.addColorStop(0.1, 'rgba(0, 230, 118, 0.25)');
-          grad.addColorStop(0.35, 'rgba(255, 23, 68, 0.45)');
-          grad.addColorStop(0.5, 'rgba(255, 171, 0, 0.35)');
-          grad.addColorStop(0.65, 'rgba(255, 23, 68, 0.45)');
-          grad.addColorStop(0.9, 'rgba(0, 230, 118, 0.25)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(40, 36, canvas.width - 80, canvas.height - 68);
-
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 13px "JetBrains Mono"';
-          ctx.fillText('🔥 Optical Groove Thermal Map Active', 50, 60);
-        }
-      };
-    }
-
-    function setVizMode(mode) {
-      currentVizMode = mode;
-      document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      drawCanvasOverlay();
-    }
+    // Computer Vision Visualization (Step 3) - Removed per specification
+    function drawCanvasOverlay() {}
+    function setVizMode(mode) {}
 
     // History Storage — Authenticated User Isolation & Direct Database Sync
     async function loadHistory() {
