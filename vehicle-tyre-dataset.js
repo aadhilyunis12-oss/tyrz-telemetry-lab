@@ -202,8 +202,8 @@
       defaultBaselineMm: 7.0, // Rear baseline: 7.0mm, Front: 4.5mm
       legalMinMm: 1.0, // Motorcycle legal min is 1.0mm (1/32")
       warningThresholdMm: 2.0,
-      wearRatePer1kKm: 0.35, // Softer sticky compound wears faster
-      avgLifespanKm: 15000,
+      wearRatePer1kKm: 0.20, // Real-world commuter & sports motorcycle compound wear rate (~30,000 km)
+      avgLifespanKm: 30000,
       defaultPsi: '33 – 42 PSI',
       positions: [
         { code: 'F', label: 'Front Wheel' },

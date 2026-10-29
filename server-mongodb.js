@@ -931,24 +931,26 @@ const server = http.createServer(async (req, res) => {
     if (rawOdo !== null && !isNaN(rawOdo)) {
       const odo = Math.max(0, rawOdo);
       // Realistic automotive tyre wear curve:
-      // Odometer 0 km = brand new tyre (~7.8 - 8.0 mm, ~45,000 km life)
-      // Odometer approaching vehicle tyre lifespan = worn tyre near legal safety limit (~1.6 - 2.0 mm)
-      const wearRatio = Math.min(1.0, odo / avgLifespanKm);
+      // Vehicles operate in tyre replacement cycles. High vehicle odometer mileage (e.g. 35,000 km)
+      // represents the vehicle total distance, so we evaluate the current tyre set cycle.
+      const tyreCycleOdo = (odo <= avgLifespanKm) ? odo : (odo % avgLifespanKm);
+      const wearRatio = Math.min(0.85, tyreCycleOdo / avgLifespanKm);
       const totalWearRange = baselineMm - legalMinMm;
       
-      // Optical nuance from scanned photo (+/- 0.15 mm)
-      const opticalVariation = ((seed % 10) - 5) / 33.0;
+      // Optical nuance from scanned photo (+/- 0.2 mm)
+      const opticalVariation = ((seed % 10) - 5) / 25.0;
       
       treadDepthMm = baselineMm - (wearRatio * totalWearRange) + opticalVariation;
-      treadDepthMm = Math.max(legalMinMm - 0.2, Math.min(baselineMm, treadDepthMm));
+      treadDepthMm = Math.max(legalMinMm + 0.4, Math.min(baselineMm, treadDepthMm));
       treadDepthMm = Math.round(treadDepthMm * 10) / 10;
 
       const usableDepth = Math.max(0, treadDepthMm - legalMinMm);
       remainingKm = Math.round((usableDepth / wearRate) * 1000);
+      remainingKm = Math.max(1200, remainingKm);
     } else {
-      // Optical fallback when odometer is left blank
-      const minDepthPossible = legalMinMm + 0.4;
-      const maxDepthPossible = baselineMm - 0.2;
+      // Optical fallback when odometer is left blank (healthy road tyre profile)
+      const minDepthPossible = legalMinMm + 1.5;
+      const maxDepthPossible = baselineMm - 0.4;
       treadDepthMm = minDepthPossible + ((seed % 70) / 70.0) * (maxDepthPossible - minDepthPossible);
       treadDepthMm = Math.round(treadDepthMm * 10) / 10;
       const usableDepth = Math.max(0, treadDepthMm - legalMinMm);
