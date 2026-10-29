@@ -839,9 +839,7 @@
     #veh-type,
     #veh-type option,
     #veh-model-select,
-    #veh-model-select option,
-    #calib-ref-type,
-    #calib-ref-type option {
+    #veh-model-select option {
       color-scheme: dark !important;
       background-color: #0b0709 !important;
       color: #ffffff !important;
@@ -1371,12 +1369,6 @@
     </nav>
 
     <div class="header-actions">
-      <!-- Telemetry Server Link Status -->
-      <div id="landing-server-pill" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(0, 230, 118, 0.12); border: 1px solid rgba(0, 230, 118, 0.3); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: #00e676;">
-        <span id="landing-server-dot" style="width: 6px; height: 6px; border-radius: 50%; background: #00e676; display: inline-block;"></span>
-        <span id="landing-server-text">TELEMETRY LINK ACTIVE</span>
-      </div>
-
       <!-- User Profile / Auth Actions -->
       <div id="user-nav-profile" style="display: flex; align-items: center; gap: 10px;">
         <a href="index.html" id="nav-login-btn" class="btn btn-outline">🔑 Login / Register</a>
@@ -1595,26 +1587,10 @@
             </div>
 
             <div>
-              <div class="form-group-title">🛞 Tyre Details &amp; Calibration</div>
+              <div class="form-group-title">🛞 Tyre Details</div>
               <div class="form-row">
                 <label>Tyre Brand & Model</label>
                 <input type="text" id="tyre-brand" placeholder="e.g. Pirelli P Zero / Michelin Pilot Sport">
-              </div>
-              <div class="form-row">
-                <label>Calibration Scale Reference</label>
-                <select id="calib-ref-type">
-                  <option value="coin_us_quarter">🪙 US Quarter Coin (24.26 mm)</option>
-                  <option value="coin_euro_2">🪙 Euro 2€ Coin (25.75 mm)</option>
-                  <option value="coin_euro_1">🪙 Euro 1€ Coin (23.25 mm)</option>
-                  <option value="coin_uk_pound">🪙 UK £1 Coin (23.43 mm)</option>
-                  <option value="coin_in_rupee_5">🪙 Indian ₹5 Coin (23.00 mm)</option>
-                  <option value="coin_in_rupee_10">🪙 Indian ₹10 Coin (27.00 mm)</option>
-                  <option value="coin_jp_yen_100">🪙 Japanese 100¥ Coin (22.60 mm)</option>
-                  <option value="coin_ca_dollar_1">🪙 Canadian $1 Loonie (26.50 mm)</option>
-                  <option value="card_credit">💳 ID / Credit Card Width (85.60 mm)</option>
-                  <option value="gauge_depth">📏 Digital/Mechanical Depth Gauge (50.00 mm)</option>
-                  <option value="auto_detect">⚡ AI Auto-Detect Reference Scale</option>
-                </select>
               </div>
               <div class="form-row">
                 <label>Tyre Size</label>
@@ -2416,7 +2392,7 @@
       const odoInput = document.getElementById('veh-odometer');
       const rawOdoStr = odoInput ? odoInput.value.trim() : '';
       const odo = (rawOdoStr !== '') ? Number(rawOdoStr) : null;
-      const calib = document.getElementById('calib-ref-type') ? document.getElementById('calib-ref-type').value : 'coin';
+      const calib = 'auto_detect';
 
       // Identify active pilot session
       let userEmail = 'pilot.f40@ferrari.io';
