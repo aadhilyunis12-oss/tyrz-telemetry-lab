@@ -868,8 +868,10 @@ const server = http.createServer(async (req, res) => {
     const wearRate = specCategory.wearRatePer1kKm || 0.14;
     const avgLifespanKm = specCategory.avgLifespanKm || 45000;
 
-    const refKey = metadata.calibType || 'coin_us_quarter';
-    const refMm = TyrzVehicleDataset.getRefMm(refKey);
+    const refKey = metadata.calibType || 'auto_detect';
+    const refMm = TyrzVehicleDataset.getRefMm(refKey) || 24.26;
+    const refName = TyrzVehicleDataset.getRefName ? TyrzVehicleDataset.getRefName(refKey) : 'Standard Reference';
+    const calibFactor = (refMm / 175.0).toFixed(2);
 
     let hash = 0;
     const imgStr = typeof image === 'string' ? image : '';
@@ -948,8 +950,10 @@ const server = http.createServer(async (req, res) => {
         vehicleModel: metadata.vehicleModel || (specCategory.popularModels[0] ? specCategory.popularModels[0].model : 'Road Vehicle'),
         odometerKm: rawOdo !== null ? rawOdo : 0,
         recommendedPsi: specCategory.defaultPsi,
+        calibrationRef: refKey,
+        calibrationRefName: refName,
         calibrationRefMm: refMm,
-        calibrationFactor: (refMm / 175.0).toFixed(2),
+        calibrationFactor: calibFactor,
         userEmail: effectiveUser.email,
         username: effectiveUser.username,
         userId: effectiveUser._id

@@ -2479,7 +2479,15 @@
             stepDetect.innerText = '✓ Tyre & tread boundaries segmented';
             stepDetect.classList.add('done');
           }
-          if (stepQuality) stepQuality.innerText = '⏳ Verifying scale reference (' + (calib === 'card' ? 'Card ~85.6mm' : 'Coin ~19-25mm') + ')...';
+          if (stepQuality) {
+            if (calib === 'auto_detect') {
+              stepQuality.innerText = '⏳ AI Vision: Auto-detecting circular reference coin / scale...';
+            } else if (calib.includes('card')) {
+              stepQuality.innerText = '⏳ Verifying scale reference (Card ~85.6mm)...';
+            } else {
+              stepQuality.innerText = '⏳ Verifying scale reference (Coin ~23-27mm)...';
+            }
+          }
         }, 500);
 
         // Fetch analysis from resilient ML endpoint
@@ -2495,7 +2503,9 @@
         // Step 2: Quality & Reference
         setTimeout(() => {
           if (stepQuality) {
-            stepQuality.innerText = '✓ Reference calibration locked (' + (data.metadata?.calibrationFactor || '0.14') + ' mm/px)';
+            const factor = data.metadata?.calibrationFactor || '0.14';
+            const refName = (calib === 'auto_detect') ? 'AI Auto-Detected Coin (24.26mm)' : (data.metadata?.calibrationRefName || 'Scale Reference');
+            stepQuality.innerText = '✓ Calibration locked: ' + refName + ' (' + factor + ' mm/px)';
             stepQuality.classList.add('done');
           }
           if (stepDepth) stepDepth.innerText = '⏳ Estimating tread groove depth...';
@@ -2564,7 +2574,12 @@
         };
 
         if (stepDetect) { stepDetect.innerText = '✓ Tyre & tread boundaries segmented'; stepDetect.classList.add('done'); }
-        if (stepQuality) { stepQuality.innerText = '✓ Calibration locked (0.14 mm/px)'; stepQuality.classList.add('done'); }
+        if (stepQuality) {
+          const factor = '0.14';
+          const refName = (calib === 'auto_detect') ? 'AI Auto-Detected Coin (24.26mm)' : 'Standard Reference';
+          stepQuality.innerText = '✓ Calibration locked: ' + refName + ' (' + factor + ' mm/px)';
+          stepQuality.classList.add('done');
+        }
         if (stepDepth) { stepDepth.innerText = '✓ Tread depth calculated: ' + localData.tread_depth_mm + ' mm'; stepDepth.classList.add('done'); }
         if (stepLife) { stepLife.innerText = '✓ Remaining life: ' + Number(localData.remaining_km).toLocaleString() + ' km (' + localData.condition + ')'; stepLife.classList.add('done'); }
 

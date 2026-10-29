@@ -310,8 +310,16 @@
     },
 
     getRefMm: function (refKey) {
-      if (CALIBRATION_REFERENCES[refKey]) return CALIBRATION_REFERENCES[refKey].mm;
-      return 24.26; // Default to US Quarter
+      if (CALIBRATION_REFERENCES[refKey] && CALIBRATION_REFERENCES[refKey].mm) {
+        return CALIBRATION_REFERENCES[refKey].mm;
+      }
+      return 24.26; // Default standard calibration scale (US/Euro/INR coin standard ~24.26mm)
+    },
+
+    getRefName: function (refKey) {
+      if (refKey === 'auto_detect') return '⚡ AI Auto-Detected Reference (24.26 mm)';
+      if (CALIBRATION_REFERENCES[refKey]) return CALIBRATION_REFERENCES[refKey].name;
+      return 'Standard Reference Coin (24.26 mm)';
     }
   };
 });
