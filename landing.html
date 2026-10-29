@@ -1763,11 +1763,11 @@
               <div class="gauge-marker-pin" id="gauge-pin"></div>
             </div>
             <div class="gauge-labels">
-              <span>0 mm</span>
-              <span>1.6 (Limit)</span>
-              <span>3.0</span>
-              <span>5.0</span>
-              <span>8.0 mm</span>
+              <span id="gauge-lbl-0">0 mm</span>
+              <span id="gauge-lbl-limit">1.6 (Limit)</span>
+              <span id="gauge-lbl-warn">3.0</span>
+              <span id="gauge-lbl-mid">5.0</span>
+              <span id="gauge-lbl-max">8.0 mm</span>
             </div>
           </div>
 
@@ -2606,10 +2606,11 @@
 
       } catch (err) {
         console.warn("Backend API unavailable or error, computing telemetry on client:", err);
-        const baseline = (vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0));
-        const legalMin = vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6);
-        const lifespan = vtype.toLowerCase().includes('bike') ? 30000 : (vtype.toLowerCase().includes('truck') ? 120000 : 45000);
-        const wearRate = vtype.toLowerCase().includes('bike') ? 0.20 : (vtype.toLowerCase().includes('truck') ? 0.25 : 0.14);
+        const cat = (typeof TyrzVehicleDataset !== 'undefined') ? TyrzVehicleDataset.getCategory(vtype) : null;
+        const baseline = cat ? cat.defaultBaselineMm : ((vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0)));
+        const legalMin = cat ? cat.legalMinMm : (vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6));
+        const lifespan = cat ? cat.avgLifespanKm : 45000;
+        const wearRate = cat ? cat.wearRatePer1kKm : 0.14;
 
         let depth;
         let remKm;
@@ -2621,7 +2622,7 @@
           depth = Math.round(depth * 10) / 10;
           remKm = Math.max(1200, Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000));
         } else {
-          depth = vtype.toLowerCase().includes('bike') ? 4.8 : 5.2;
+          depth = Math.round((legalMin + ((baseline - legalMin) * 0.65)) * 10) / 10;
           remKm = Math.round((Math.max(0, depth - legalMin) / wearRate) * 1000);
         }
 
@@ -2678,14 +2679,25 @@
       }
 
       const vtype = document.getElementById('veh-type')?.value || 'car';
-      const baseMm = (vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0));
-      const minMm = vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6);
+      const cat = (typeof TyrzVehicleDataset !== 'undefined') ? TyrzVehicleDataset.getCategory(vtype) : null;
+      const baseMm = cat ? cat.defaultBaselineMm : ((vtype.toLowerCase().includes('suv')) ? 10.0 : (vtype.toLowerCase().includes('truck') ? 18.0 : (vtype.toLowerCase().includes('bike') ? 7.0 : 8.0)));
+      const minMm = cat ? cat.legalMinMm : (vtype.toLowerCase().includes('bike') ? 1.0 : (vtype.toLowerCase().includes('truck') ? 3.2 : 1.6));
 
+      // Dynamic Gauge Bar Scaling & Labels
       const gaugeFill = document.getElementById('gauge-fill-bar');
       const gaugePin  = document.getElementById('gauge-pin');
       const pct = Math.min(100, Math.max(5, (depth / baseMm) * 100));
       if (gaugeFill) gaugeFill.style.width = pct + '%';
       if (gaugePin)  gaugePin.style.left = pct + '%';
+
+      const lblLimit = document.getElementById('gauge-lbl-limit');
+      const lblWarn  = document.getElementById('gauge-lbl-warn');
+      const lblMid   = document.getElementById('gauge-lbl-mid');
+      const lblMax   = document.getElementById('gauge-lbl-max');
+      if (lblLimit) lblLimit.textContent = minMm.toFixed(1) + ' (Limit)';
+      if (lblWarn && cat) lblWarn.textContent = cat.warningThresholdMm.toFixed(1);
+      if (lblMid)  lblMid.textContent = ((baseMm + minMm) / 2).toFixed(1);
+      if (lblMax)  lblMax.textContent = baseMm.toFixed(1) + ' mm';
 
       const kmVal = document.getElementById('report-km-val');
       if (kmVal) kmVal.textContent = 'Approximately ' + Number(km).toLocaleString() + ' km until ' + minMm + ' mm legal limit';
@@ -2728,8 +2740,8 @@
       }
       if (safetyDesc) {
         safetyDesc.textContent = safe
-          ? 'Your estimated tread depth of ' + depth + ' mm is above the 1.6 mm legal safety limit. Continue monitoring tread wear regularly every 5,000 km.'
-          : 'WARNING: Your tyre tread is at or below ' + depth + ' mm (legal limit: 1.6 mm). Wet grip, braking distance, and aquaplaning safety are severely degraded. Immediate replacement is strongly advised.';
+          ? 'Your estimated tread depth of ' + depth + ' mm is safely above the ' + minMm + ' mm legal road safety limit for your ' + (cat ? cat.name : 'vehicle') + '. Continue monitoring tread wear regularly every 5,000 km.'
+          : 'WARNING: Your tyre tread is at or below ' + depth + ' mm (legal road safety limit: ' + minMm + ' mm). Wet grip, braking distance, and aquaplaning safety are severely degraded. Immediate tyre replacement is strongly advised.';
       }
 
       // Update Dynamic Wear Trajectory Graph

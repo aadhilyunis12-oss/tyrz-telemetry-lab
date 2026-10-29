@@ -65,8 +65,8 @@
       defaultBaselineMm: 10.0,
       legalMinMm: 1.6,
       warningThresholdMm: 3.5,
-      wearRatePer1kKm: 0.16,
-      avgLifespanKm: 50000,
+      wearRatePer1kKm: 0.15,
+      avgLifespanKm: 55000,
       defaultPsi: '35 – 40 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -93,8 +93,8 @@
       defaultBaselineMm: 11.0,
       legalMinMm: 1.6,
       warningThresholdMm: 4.0,
-      wearRatePer1kKm: 0.18,
-      avgLifespanKm: 55000,
+      wearRatePer1kKm: 0.16,
+      avgLifespanKm: 60000,
       defaultPsi: '38 – 45 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
@@ -120,7 +120,7 @@
       defaultBaselineMm: 18.0,
       legalMinMm: 3.2, // Steer axle legal limit is 3.2mm (4/32")
       warningThresholdMm: 5.5,
-      wearRatePer1kKm: 0.25,
+      wearRatePer1kKm: 0.12,
       avgLifespanKm: 120000,
       defaultPsi: '100 – 120 PSI',
       positions: [
@@ -150,7 +150,7 @@
       defaultBaselineMm: 16.0,
       legalMinMm: 3.2,
       warningThresholdMm: 5.0,
-      wearRatePer1kKm: 0.22,
+      wearRatePer1kKm: 0.13,
       avgLifespanKm: 100000,
       defaultPsi: '95 – 110 PSI',
       positions: [
@@ -257,7 +257,7 @@
       legalMinMm: 1.6,
       warningThresholdMm: 3.0,
       wearRatePer1kKm: 0.24, // High speed camber & high lateral g-forces
-      avgLifespanKm: 20000,
+      avgLifespanKm: 25000,
       defaultPsi: '30 – 34 PSI',
       positions: [
         { code: 'FL', label: 'Front Left' },
