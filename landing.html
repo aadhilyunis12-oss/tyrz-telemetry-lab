@@ -327,26 +327,61 @@
       font-family: var(--font-mono);
       font-size: 0.78rem;
       font-weight: 700;
-      color: #ff6060;
+      color: #ff3333;
       text-transform: uppercase;
       letter-spacing: 0.15em;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       padding: 5px 16px;
-      background: rgba(230, 0, 0, 0.12);
+      background: rgba(230, 0, 0, 0.14);
       border-radius: 20px;
-      border: 1px solid rgba(230, 0, 0, 0.35);
-      box-shadow: 0 0 12px rgba(230, 0, 0, 0.12);
+      border: 1px solid rgba(230, 0, 0, 0.45);
+      box-shadow: 0 0 14px rgba(230, 0, 0, 0.2);
     }
 
     .section-title {
-      font-size: 2.4rem;
+      font-size: 2.35rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.025em;
       margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 40%, #ff6060 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .section-title .title-accent {
+      color: #ff2a2a;
+      text-shadow: 0 0 18px rgba(230, 0, 0, 0.45);
+    }
+
+    .heading-logo-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1.5px solid rgba(230, 0, 0, 0.55);
+      box-shadow: 0 0 14px rgba(230, 0, 0, 0.45);
+      vertical-align: middle;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .heading-icon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(230, 0, 0, 0.15);
+      border: 1.5px solid rgba(230, 0, 0, 0.45);
+      box-shadow: 0 0 12px rgba(230, 0, 0, 0.3);
+      font-size: 1.25rem;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
     .section-subtitle {
@@ -1451,7 +1486,10 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Step 1 — Image Capture</div>
-        <h2 class="section-title">Upload Tyre Photo or Use Camera</h2>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>Upload Tyre Photo <span class="title-accent">&amp; Use Camera</span></span>
+        </h2>
         <p class="section-subtitle">Take a photo using your device camera or upload an existing image of your tyre tread.</p>
       </div>
 
@@ -1669,7 +1707,10 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Step 2 — Diagnostic Report</div>
-        <h2 class="section-title">🛞 Tyre Health Report</h2>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>Tyre Health <span class="title-accent">Report</span></span>
+        </h2>
         <p class="section-subtitle">Real-time computer vision analysis results for your scanned tyre.</p>
       </div>
 
@@ -1770,7 +1811,10 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Safety Advisory</div>
-        <h2 class="section-title">⚠️ Tyre Status & Recommendations</h2>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>Tyre Status <span class="title-accent">&amp; Recommendations</span></span>
+        </h2>
       </div>
 
       <div class="safety-card">
@@ -1797,7 +1841,10 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Saved Records</div>
-        <h2 class="section-title">📋 Previous Scan History</h2>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>Previous Scan <span class="title-accent">History</span></span>
+        </h2>
       </div>
 
       <div class="history-card">
@@ -1825,8 +1872,11 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Vehicle Overview</div>
-        <h2 class="section-title">🚗 My Vehicle — 4 Tyre Monitor</h2>
-        <p class="section-subtitle">Real-time health tracking across all four wheels. Click any tyre to select and calibrate a targeted scan.</p>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>My Vehicle — <span class="title-accent">Tyre Monitor</span></span>
+        </h2>
+        <p class="section-subtitle">Real-time health tracking across all tyres. Click any tyre to select and calibrate a targeted scan.</p>
       </div>
 
       <!-- Vehicle Model & Telemetry Bar -->
@@ -1862,7 +1912,10 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">Technology</div>
-        <h2 class="section-title">How Our AI Works</h2>
+        <h2 class="section-title">
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span>How Our <span class="title-accent">AI Works</span></span>
+        </h2>
         <p class="section-subtitle">5-stage deep learning pipeline for tread depth estimation.</p>
       </div>
 
@@ -2797,7 +2850,11 @@
       const icon = (cat && cat.icon) ? cat.icon : (CATEGORY_ICONS[catKey] || '🚗');
 
       if (sectionTitle) {
-        sectionTitle.innerHTML = `${icon} My Vehicle — ${count} Tyre Monitor`;
+        sectionTitle.innerHTML = `
+          <img src="tyrz_logo_red.jpg" alt="TYRZ" class="heading-logo-badge">
+          <span class="heading-icon-badge">${icon}</span>
+          <span>My Vehicle — <span class="title-accent">${count} Tyre Monitor</span></span>
+        `;
       }
       if (sectionSubtitle) {
         sectionSubtitle.textContent = count === 2
